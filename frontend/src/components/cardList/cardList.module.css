@@ -1,0 +1,66 @@
+.container {
+  flex: 5;
+}
+
+.headerFeed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--textColor);
+  letter-spacing: -0.5px;
+}
+
+.sortBadges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sortBadge {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--softTextColor);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sortBadge:hover {
+  border-color: var(--accent-green);
+  color: var(--textColor);
+}
+
+.activeSort {
+  background-color: var(--accent-green-glow);
+  color: var(--accent-green);
+  border-color: var(--accent-green);
+}
+
+.posts {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.emptyFeed {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+  color: var(--softTextColor);
+  font-size: 16px;
+}

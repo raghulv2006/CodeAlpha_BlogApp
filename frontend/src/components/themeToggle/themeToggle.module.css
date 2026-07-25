@@ -1,0 +1,27 @@
+.container {
+  width: 44px;
+  height: 22px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px;
+  position: relative;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  transition: border-color 0.2s ease;
+}
+
+.container:hover {
+  border-color: var(--accent-green);
+}
+
+.ball {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  position: absolute;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 6px var(--accent-green-glow);
+}

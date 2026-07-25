@@ -1,0 +1,165 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--textColor);
+}
+
+.writeBox {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.input {
+  width: 100%;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--textColor);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+}
+
+.input:focus {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 8px var(--accent-green-glow);
+}
+
+.buttonRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.button {
+  background-color: var(--accent-green);
+  color: #000;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 20px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.button:hover:not(:disabled) {
+  background-color: var(--accent-green-hover);
+  box-shadow: 0 0 10px var(--accent-green-glow);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loginPrompt {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.loginLink {
+  color: var(--accent-green);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.loginLink:hover {
+  text-decoration: underline;
+}
+
+.commentsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+}
+
+.commentCard {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+}
+
+.userHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatarWrapper {
+  width: 28px;
+  height: 28px;
+  position: relative;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.avatar {
+  object-fit: cover;
+}
+
+.defaultAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--accent-green);
+  color: #000;
+  font-weight: 700;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.username {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--textColor);
+}
+
+.date {
+  font-size: 11px;
+  color: var(--softTextColor);
+}
+
+.commentBody {
+  font-size: 14px;
+  color: var(--textColor);
+  line-height: 1.5;
+  padding-left: 38px;
+}
+
+.loadingComments, .noComments {
+  color: var(--softTextColor);
+  font-size: 14px;
+  text-align: center;
+  padding: 20px;
+}

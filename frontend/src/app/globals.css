@@ -1,0 +1,108 @@
+:root {
+  --bg: #0b0b0b;
+  --bg-primary: #0b0b0b;
+  --bg-secondary: #121212;
+  --bg-card: #18181b;
+  --bg-card-hover: #202023;
+  --softBg: #1f1f23;
+  --textColor: #f3f4f6;
+  --softTextColor: #9ca3af;
+  --accent-green: #22c55e;
+  --accent-green-hover: #16a34a;
+  --accent-green-glow: rgba(34, 197, 94, 0.2);
+  --border-color: #27272a;
+}
+
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  background-color: var(--bg-primary);
+  color: var(--textColor);
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.dark {
+  --bg: #0b0b0b;
+  --bg-primary: #0b0b0b;
+  --bg-secondary: #121212;
+  --bg-card: #18181b;
+  --bg-card-hover: #202023;
+  --softBg: #1f1f23;
+  --textColor: #f3f4f6;
+  --softTextColor: #9ca3af;
+  --accent-green: #22c55e;
+  --accent-green-hover: #16a34a;
+  --accent-green-glow: rgba(34, 197, 94, 0.2);
+  --border-color: #27272a;
+}
+
+.light {
+  --bg: #0b0b0b;
+  --bg-primary: #0b0b0b;
+  --bg-secondary: #121212;
+  --bg-card: #18181b;
+  --bg-card-hover: #202023;
+  --softBg: #1f1f23;
+  --textColor: #f3f4f6;
+  --softTextColor: #9ca3af;
+  --accent-green: #22c55e;
+  --accent-green-hover: #16a34a;
+  --accent-green-glow: rgba(34, 197, 94, 0.2);
+  --border-color: #27272a;
+}
+
+.container {
+  min-height: 100vh;
+  background-color: var(--bg);
+  color: var(--textColor);
+}
+
+.wrapper {
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+@media screen and (max-width: 1024px) {
+  .wrapper {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-green);
+}
+
+.ql-container {
+  font-size: 18px !important;
+  color: var(--textColor) !important;
+}
+
+.ql-editor.ql-blank::before {
+  color: var(--softTextColor) !important;
+}

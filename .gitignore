@@ -1,35 +1,69 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
-/.pnp
+# Dependencies
+node_modules/
+**/node_modules/
+.pnp
 .pnp.js
 
-# testing
-/coverage
+# Next.js Build Output
+.next/
+**/.next/
+out/
+**/out/
 
-# next.js
-/.next/
-/out/
+# Production Builds
+build/
+**/build/
+dist/
+**/dist/
 
-# production
-/build
-
-# misc
-.DS_Store
+# Environment Files & Secrets (Keep .env.example)
+.env
+.env*
+!.env.example
+**/.env
+**/.env*
+!**/.env.example
 *.pem
 
-# debug
+# Logs & Debugging
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
 
-# local env files
-.env*.local
-.env
-# vercel
+# Testing & Coverage
+coverage/
+**/coverage/
+.nyc_output
+
+# Editor & IDE Configs
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Vercel & Deployment
 .vercel
 
-# typescript
+# TypeScript & Cache
 *.tsbuildinfo
 next-env.d.ts
+.eslintcache

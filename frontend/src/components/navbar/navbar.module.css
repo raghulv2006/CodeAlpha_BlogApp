@@ -1,0 +1,107 @@
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 0 16px;
+  margin-bottom: 24px;
+  border-radius: 0 0 12px 12px;
+}
+
+.leftSection {
+  display: flex;
+  align-items: center;
+}
+
+.logoLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.logoBadge {
+  background-color: var(--accent-green);
+  color: #000;
+  font-weight: 800;
+  font-size: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px var(--accent-green-glow);
+}
+
+.logoText {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--textColor);
+  letter-spacing: -0.5px;
+}
+
+.searchBar {
+  flex: 1;
+  max-width: 480px;
+  margin: 0 24px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  width: 18px;
+  height: 18px;
+  color: var(--softTextColor);
+}
+
+.searchInput {
+  width: 100%;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 8px 16px 8px 38px;
+  color: var(--textColor);
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.searchInput:focus, .searchInput:hover {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 8px var(--accent-green-glow);
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.link {
+  color: var(--softTextColor);
+  transition: color 0.2s ease;
+  padding: 6px 12px;
+  border-radius: 16px;
+}
+
+.link:hover {
+  color: var(--accent-green);
+  background-color: var(--softBg);
+}
+
+@media screen and (max-width: 768px) {
+  .searchBar {
+    display: none;
+  }
+}

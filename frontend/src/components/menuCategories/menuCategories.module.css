@@ -1,0 +1,35 @@
+.categoryList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.categoryItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--softTextColor);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.categoryItem:hover {
+  background-color: var(--softBg);
+  color: var(--accent-green);
+  border-color: var(--accent-green);
+  box-shadow: 0 0 8px var(--accent-green-glow);
+}
+
+.icon {
+  font-size: 14px;
+}
+
+.name {
+  font-size: 13px;
+}

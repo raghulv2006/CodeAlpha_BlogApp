@@ -1,0 +1,58 @@
+.container {
+  margin-top: 12px;
+}
+
+.categoryBanner {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.bannerBadge {
+  background-color: var(--accent-green);
+  color: #000;
+  font-weight: 800;
+  font-size: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px var(--accent-green-glow);
+}
+
+.bannerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--textColor);
+  text-transform: lowercase;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--softTextColor);
+}
+
+.content {
+  display: flex;
+  gap: 32px;
+}
+
+@media screen and (max-width: 1024px) {
+  .content {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,71 @@
+.skeletonContainer {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+.voteSkeleton {
+  width: 32px;
+  height: 80px;
+  background-color: var(--softBg);
+  border-radius: 16px;
+}
+
+.contentSkeleton {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.headerSkeleton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatarSkeleton {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--softBg);
+}
+
+.lineShort {
+  width: 120px;
+  height: 12px;
+  border-radius: 6px;
+  background-color: var(--softBg);
+}
+
+.titleSkeleton {
+  width: 75%;
+  height: 20px;
+  border-radius: 6px;
+  background-color: var(--softBg);
+}
+
+.textSkeleton {
+  width: 90%;
+  height: 14px;
+  border-radius: 6px;
+  background-color: var(--softBg);
+}
+
+.mediaSkeleton {
+  width: 100%;
+  height: 180px;
+  border-radius: 8px;
+  background-color: var(--softBg);
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.3; }
+  100% { opacity: 0.6; }
+}

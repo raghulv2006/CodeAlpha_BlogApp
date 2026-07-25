@@ -1,0 +1,156 @@
+.container {
+  margin-top: 12px;
+}
+
+.notFoundContainer {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--softTextColor);
+}
+
+.headerSection {
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.metaBadgeRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.categoryBadge {
+  background-color: var(--accent-green-glow);
+  color: var(--accent-green);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 16px;
+}
+
+.viewBadge {
+  font-size: 12px;
+  color: var(--softTextColor);
+  font-weight: 500;
+}
+
+.title {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--textColor);
+  line-height: 1.25;
+  letter-spacing: -0.5px;
+}
+
+.authorRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.avatarWrapper {
+  width: 40px;
+  height: 40px;
+  position: relative;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.avatar {
+  object-fit: cover;
+}
+
+.defaultAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--accent-green);
+  color: #000;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.authorDetails {
+  display: flex;
+  flex-direction: column;
+}
+
+.username {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--textColor);
+}
+
+.date {
+  font-size: 12px;
+  color: var(--softTextColor);
+}
+
+.mediaContainer {
+  width: 100%;
+  height: 420px;
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 32px;
+  background-color: #000;
+  border: 1px solid var(--border-color);
+  display: flex;
+  justify-content: center;
+}
+
+.heroImage {
+  object-fit: cover;
+}
+
+.videoPlayer {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.contentLayout {
+  display: flex;
+  gap: 32px;
+}
+
+.mainArticle {
+  flex: 5;
+}
+
+.articleBody {
+  font-size: 18px;
+  line-height: 1.7;
+  color: var(--textColor);
+  margin-bottom: 40px;
+  word-break: break-word;
+}
+
+.articleBody p {
+  margin-bottom: 20px;
+}
+
+.commentsSection {
+  margin-top: 40px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border-color);
+}
+
+@media screen and (max-width: 768px) {
+  .title {
+    font-size: 26px;
+  }
+  .mediaContainer {
+    height: 250px;
+  }
+  .contentLayout {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,105 @@
+.container {
+  flex: 2;
+}
+
+.stickyWrapper {
+  position: sticky;
+  top: 84px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sidebarHeader {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headerTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.communityIcon {
+  font-size: 18px;
+}
+
+.mainTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--textColor);
+}
+
+.collapseBtn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--softTextColor);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  transition: all 0.2s ease;
+}
+
+.collapseBtn:hover {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+}
+
+.contentBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.sectionCard {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--textColor);
+  margin-bottom: 12px;
+  letter-spacing: -0.2px;
+}
+
+.communityInfoCard {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.infoTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-green);
+  margin-bottom: 6px;
+}
+
+.infoDesc {
+  font-size: 12px;
+  color: var(--softTextColor);
+  line-height: 1.5;
+}
+
+@media screen and (max-width: 1024px) {
+  .container {
+    display: none;
+  }
+}
