@@ -1,34 +1,32 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
+import useSWR from "swr";
+import { motion, AnimatePresence } from "framer-motion";
 import styles from "./cardList.module.css";
 import Pagination from "../pagination/Pagination";
 import Card from "../card/Card";
+import SkeletonCard from "../skeleton/SkeletonCard";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-const getData = async (page, cat) => {
-  try {
-    const res = await fetch(
-      `${API_URL}/api/posts?page=${page}&cat=${cat || ""}`,
-      {
-        cache: "no-store",
-      }
-    );
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
-    if (!res.ok) {
-      return { posts: [], count: 0 };
+const CardList = ({ page = 1, cat = "" }) => {
+  const [activeSort, setActiveSort] = useState("hot");
+
+  const { data, isLoading } = useSWR(
+    `${API_URL}/api/posts?page=${page}&cat=${cat || ""}`,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 30000, // 30 seconds client-side deduplication / caching
     }
+  );
 
-    return res.json();
-  } catch (error) {
-    console.error("Error fetching posts:", error);
-    return { posts: [], count: 0 };
-  }
-};
-
-const CardList = async ({ page, cat }) => {
-  const { posts, count } = await getData(page, cat);
-
-  const POST_PER_PAGE = 4;
+  const posts = data?.posts || [];
+  const count = data?.count || 0;
+  const POST_PER_PAGE = 10;
 
   const hasPrev = POST_PER_PAGE * (page - 1) > 0;
   const hasNext = POST_PER_PAGE * (page - 1) + POST_PER_PAGE < count;
@@ -40,17 +38,52 @@ const CardList = async ({ page, cat }) => {
           {cat ? `r/${cat}` : "Popular Feed"}
         </h1>
         <div className={styles.sortBadges}>
-          <span className={`${styles.sortBadge} ${styles.activeSort}`}>🔥 Hot</span>
-          <span className={styles.sortBadge}>✨ New</span>
-          <span className={styles.sortBadge}>📈 Top</span>
+          <span
+            className={`${styles.sortBadge} ${activeSort === "hot" ? styles.activeSort : ""}`}
+            onClick={() => setActiveSort("hot")}
+          >
+            🔥 Hot
+          </span>
+          <span
+            className={`${styles.sortBadge} ${activeSort === "new" ? styles.activeSort : ""}`}
+            onClick={() => setActiveSort("new")}
+          >
+            ✨ New
+          </span>
+          <span
+            className={`${styles.sortBadge} ${activeSort === "top" ? styles.activeSort : ""}`}
+            onClick={() => setActiveSort("top")}
+          >
+            📈 Top
+          </span>
         </div>
       </div>
 
       <div className={styles.posts}>
-        {posts && posts.length > 0 ? (
-          posts.map((item) => (
-            <Card item={item} key={item.id || item._id} />
-          ))
+        {isLoading ? (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        ) : posts && posts.length > 0 ? (
+          <AnimatePresence mode="popLayout">
+            {posts.map((item, index) => (
+              <motion.div
+                key={item.id || item.slug}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{
+                  duration: 0.3,
+                  delay: index * 0.05,
+                  ease: [0.25, 1, 0.5, 1],
+                }}
+              >
+                <Card item={item} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         ) : (
           <div className={styles.emptyFeed}>
             <p>No posts found in this community yet.</p>

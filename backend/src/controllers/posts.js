@@ -3,14 +3,16 @@ const prisma = require('../utils/prisma');
 const getPosts = async (req, res) => {
   const page = parseInt(req.query.page || '1');
   const cat = req.query.cat;
+  const userEmail = req.query.userEmail;
 
-  const POST_PER_PAGE = 4;
+  const POST_PER_PAGE = 10;
 
   const query = {
     take: POST_PER_PAGE,
     skip: POST_PER_PAGE * (page - 1),
     where: {
       ...(cat && { catSlug: cat }),
+      ...(userEmail && { userEmail: userEmail }),
     },
     orderBy: {
       createdAt: 'desc',
@@ -53,6 +55,10 @@ const getPostBySlug = async (req, res) => {
 
 const createPost = async (req, res) => {
   const { title, desc, img, video, mediaType, slug, catSlug, userEmail } = req.body;
+
+  if (!title || typeof title !== 'string' || !title.trim()) {
+    return res.status(400).json({ message: 'Title is required' });
+  }
 
   if (!userEmail) {
     return res.status(401).json({ message: 'User email required!' });

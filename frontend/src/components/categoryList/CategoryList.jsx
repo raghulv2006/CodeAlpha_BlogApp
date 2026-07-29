@@ -1,4 +1,8 @@
+"use client";
+
 import React from "react";
+import useSWR from "swr";
+import { motion } from "framer-motion";
 import styles from "./categoryList.module.css";
 import Link from "next/link";
 import Image from "next/image";
@@ -14,47 +18,43 @@ const fallbackCategories = [
   { id: "6", slug: "coding", title: "Coding", img: "/coding.png" },
 ];
 
-const getData = async () => {
-  try {
-    const res = await fetch(`${API_URL}/api/categories`, {
-      cache: "no-store",
-    });
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
-    if (!res.ok) {
-      return fallbackCategories;
-    }
+const CategoryList = () => {
+  const { data } = useSWR(`${API_URL}/api/categories`, fetcher, {
+    fallbackData: fallbackCategories,
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
+  });
 
-    const data = await res.json();
-    return Array.isArray(data) && data.length > 0 ? data : fallbackCategories;
-  } catch (error) {
-    return fallbackCategories;
-  }
-};
-
-const CategoryList = async () => {
-  const categories = await getData();
+  const categories = Array.isArray(data) && data.length > 0 ? data : fallbackCategories;
 
   return (
     <div className={styles.container}>
       <h2 className={styles.title}>Explore Communities</h2>
       <div className={styles.categories}>
-        {categories.map((item) => (
-          <Link
-            href={`/blog?cat=${item.slug}`}
-            className={styles.category}
-            key={item.id || item._id || item.slug}
+        {categories.map((item, index) => (
+          <motion.div
+            key={item.id || item.slug}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.25, delay: index * 0.04 }}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.98 }}
           >
-            {item.img && (
-              <Image
-                src={item.img}
-                alt={item.title}
-                width={24}
-                height={24}
-                className={styles.image}
-              />
-            )}
-            <span className={styles.categoryName}>r/{item.title.toLowerCase()}</span>
-          </Link>
+            <Link href={`/blog?cat=${item.slug}`} className={styles.category}>
+              {item.img && (
+                <Image
+                  src={item.img}
+                  alt={item.title}
+                  width={24}
+                  height={24}
+                  className={styles.image}
+                />
+              )}
+              <span className={styles.categoryName}>r/{item.title.toLowerCase()}</span>
+            </Link>
+          </motion.div>
         ))}
       </div>
     </div>

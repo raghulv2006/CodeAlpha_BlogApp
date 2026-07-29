@@ -5,12 +5,13 @@ import Footer from "@/components/footer/Footer";
 import { ThemeContextProvider } from "@/context/ThemeContext";
 import ThemeProvider from "@/providers/ThemeProvider";
 import AuthProvider from "@/providers/AuthProvider";
+import PageTransition from "@/components/animation/PageTransition";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "BotBlogs Blog App",
-  description: "The best blog app!",
+  title: "BotBlogs - Community Blog & Articles",
+  description: "Discover stories, tech articles, and community discussions on BotBlogs.",
 };
 
 export default function RootLayout({ children }) {
@@ -23,7 +24,7 @@ export default function RootLayout({ children }) {
               <div className="container">
                 <div className="wrapper">
                   <Navbar />
-                  {children}
+                  <PageTransition>{children}</PageTransition>
                   <Footer />
                 </div>
               </div>

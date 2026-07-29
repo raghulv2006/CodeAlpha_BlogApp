@@ -1,21 +1,4 @@
-import GithubProvider from "next-auth/providers/github";
-import GoogleProvider from "next-auth/providers/google";
-import { getServerSession } from "next-auth";
+import { auth } from "./firebase";
+import { useAuth, useSession, signOut } from "@/context/AuthContext";
 
-export const authOptions = {
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_ID || "",
-      clientSecret: process.env.GOOGLE_SECRET || "",
-    }),
-    GithubProvider({
-      clientId: process.env.GITHUB_ID || "",
-      clientSecret: process.env.GITHUB_SECRET || "",
-    }),
-  ],
-  session: {
-    strategy: "jwt",
-  },
-};
-
-export const getAuthSession = () => getServerSession(authOptions);
+export { auth, useAuth, useSession, signOut };

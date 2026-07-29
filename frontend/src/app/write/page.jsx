@@ -5,7 +5,7 @@ import styles from "./writePage.module.css";
 import { useEffect, useState } from "react";
 import "react-quill/dist/quill.bubble.css";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/context/AuthContext";
 import dynamic from "next/dynamic";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";

@@ -42,10 +42,26 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
+  bio           String?   @db.Text
+  createdAt     DateTime  @default(now())
   accounts      Account[]
   sessions      Session[]
   Post          Post[]
   Comment       Comment[]
+  followedBy    Follow[]  @relation("following")
+  following     Follow[]  @relation("follower")
+}
+
+model Follow {
+  followerId  String
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@id([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
 }
 
 model VerificationToken {
@@ -79,6 +95,10 @@ model Post {
   userEmail String
   user      User      @relation(fields: [userEmail], references: [email])
   comments  Comment[]
+
+  @@index([catSlug])
+  @@index([userEmail])
+  @@index([createdAt])
 }
 
 model Comment {
@@ -89,4 +109,7 @@ model Comment {
   user      User     @relation(fields: [userEmail], references: [email])
   postSlug  String
   post      Post     @relation(fields: [postSlug], references: [slug])
+
+  @@index([postSlug])
+  @@index([userEmail])
 }

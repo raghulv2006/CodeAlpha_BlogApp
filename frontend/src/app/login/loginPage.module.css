@@ -2,7 +2,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 70vh;
+  min-height: 80vh;
+  padding: 40px 16px;
 }
 
 .loading {
@@ -14,14 +15,14 @@
 .wrapper {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 40px;
+  border-radius: 20px;
+  padding: 36px;
   width: 100%;
-  max-width: 420px;
+  max-width: 460px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  gap: 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
 }
 
 .header {
@@ -37,13 +38,13 @@
   color: #000;
   font-weight: 800;
   font-size: 20px;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .title {
@@ -56,6 +57,34 @@
   font-size: 13px;
   color: var(--softTextColor);
   line-height: 1.4;
+}
+
+.tabs {
+  display: flex;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.tabBtn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--softTextColor);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.activeTab {
+  background-color: var(--softBg);
+  color: var(--accent-green);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .buttonStack {
@@ -91,6 +120,105 @@
   height: 18px;
 }
 
-.githubBtn:hover {
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--softTextColor);
+  font-size: 12px;
+  margin: 4px 0;
+}
+
+.divider::before, .divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: var(--border-color);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--textColor);
+}
+
+.input {
+  width: 100%;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 11px 14px;
+  color: var(--textColor);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.input:focus {
+  border-color: var(--accent-green);
+}
+
+.submitBtn {
+  background-color: var(--accent-green);
+  color: #000;
+  font-weight: 700;
+  border: none;
+  padding: 12px;
+  border-radius: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 6px;
+}
+
+.submitBtn:hover {
+  background-color: var(--accent-green-hover);
+  box-shadow: 0 0 12px var(--accent-green-glow);
+}
+
+.toggleText {
+  text-align: center;
+  font-size: 13px;
+  color: var(--softTextColor);
+}
+
+.toggleBtn {
+  background: transparent;
+  border: none;
   color: var(--accent-green);
+  font-weight: 700;
+  cursor: pointer;
+  margin-left: 6px;
+}
+
+.errorMsg {
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.successMsg {
+  background-color: rgba(34, 197, 94, 0.1);
+  border: 1px solid var(--accent-green);
+  color: var(--accent-green);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  text-align: center;
 }

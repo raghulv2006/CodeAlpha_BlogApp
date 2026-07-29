@@ -5,6 +5,7 @@ import styles from "./card.module.css";
 import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import sanitizeHtml from "sanitize-html";
 
 const Card = ({ item }) => {
   const [votes, setVotes] = useState(() => Math.floor(Math.random() * 40) + (item.views || 5));
@@ -64,16 +65,22 @@ const Card = ({ item }) => {
       <div className={styles.mainContent}>
         {/* Post Metadata Header */}
         <div className={styles.metaHeader}>
-          {item?.user?.image ? (
-            <img src={item.user.image} alt={item.user.name || "Author"} className={styles.authorAvatar} />
-          ) : (
-            <div className={styles.defaultAvatar}>
-              {(item?.user?.name || item?.userEmail || "U")[0].toUpperCase()}
-            </div>
-          )}
-          <span className={styles.authorName}>
-            u/{item?.user?.name?.replace(/\s+/g, "").toLowerCase() || item?.userEmail?.split("@")[0] || "anonymous"}
-          </span>
+          <Link
+            href={`/profile?email=${encodeURIComponent(item?.userEmail || "")}`}
+            className={styles.metaHeader}
+            style={{ textDecoration: "none" }}
+          >
+            {item?.user?.image ? (
+              <img src={item.user.image} alt={item.user.name || "Author"} className={styles.authorAvatar} />
+            ) : (
+              <div className={styles.defaultAvatar}>
+                {(item?.user?.name || item?.userEmail || "U")[0].toUpperCase()}
+              </div>
+            )}
+            <span className={styles.authorName}>
+              u/{item?.user?.name?.replace(/\s+/g, "").toLowerCase() || item?.userEmail?.split("@")[0] || "anonymous"}
+            </span>
+          </Link>
           <span className={styles.dotSeparator}>•</span>
           <span className={styles.postDate}>{formattedDate}</span>
           <span className={styles.categoryPill}>{item?.catSlug}</span>
@@ -99,7 +106,9 @@ const Card = ({ item }) => {
         <div
           className={styles.descSnippet}
           dangerouslySetInnerHTML={{
-            __html: item?.desc ? item.desc.substring(0, 160) + (item.desc.length > 160 ? "..." : "") : "",
+            __html: sanitizeHtml(
+              item?.desc ? item.desc.substring(0, 160) + (item.desc.length > 160 ? "..." : "") : ""
+            ),
           }}
         />
 

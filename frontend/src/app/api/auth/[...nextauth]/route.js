@@ -1,6 +1,9 @@
-import { authOptions } from "@/utils/auth";
-import NextAuth from "next-auth";
+import { NextResponse } from "next/server";
 
-const handler = NextAuth(authOptions);
+export async function GET() {
+  return NextResponse.json({ message: "Firebase Authentication is active" });
+}
 
-export { handler as GET, handler as POST };
+export async function POST() {
+  return NextResponse.json({ message: "Firebase Authentication is active" });
+}

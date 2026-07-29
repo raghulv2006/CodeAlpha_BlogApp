@@ -2,6 +2,7 @@ import Menu from "@/components/Menu/Menu";
 import styles from "./singlePage.module.css";
 import Image from "next/image";
 import Comments from "@/components/comments/Comments";
+import sanitizeHtml from "sanitize-html";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -85,7 +86,18 @@ const SinglePage = async ({ params }) => {
         <main className={styles.mainArticle}>
           <article
             className={styles.articleBody}
-            dangerouslySetInnerHTML={{ __html: data?.desc }}
+            dangerouslySetInnerHTML={{
+              __html: sanitizeHtml(data?.desc || "", {
+                allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "video", "source", "iframe", "h1", "h2", "u", "s"]),
+                allowedAttributes: {
+                  ...sanitizeHtml.defaults.allowedAttributes,
+                  img: ["src", "alt", "width", "height"],
+                  video: ["src", "controls", "width", "height", "autoplay", "muted", "loop"],
+                  source: ["src", "type"],
+                  iframe: ["src", "width", "height", "allowfullscreen"],
+                },
+              }),
+            }}
           />
 
           <section className={styles.commentsSection}>

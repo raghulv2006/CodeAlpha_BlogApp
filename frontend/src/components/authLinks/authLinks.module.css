@@ -40,6 +40,40 @@
   color: #000;
 }
 
+.profileBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--bg-card);
+  color: var(--textColor);
+  border: 1px solid var(--border-color);
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.profileBtn:hover {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+  background-color: var(--bg-card-hover);
+}
+
+.avatarBadge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .plusIcon {
   font-size: 16px;
   font-weight: 800;
