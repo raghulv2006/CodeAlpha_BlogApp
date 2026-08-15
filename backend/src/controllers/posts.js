@@ -62,37 +62,76 @@ const getPosts = async (req, res) => {
         skip: POST_PER_PAGE * (page - 1),
         where: whereClause,
         orderBy,
-        include: {
-          user: true,
-          cat: true,
-          tags: true,
-          votes: true,
-          bookmarks: true,
-          comments: {
-            select: { id: true },
+        select: {
+          id: true,
+          createdAt: true,
+          slug: true,
+          title: true,
+          desc: true,
+          img: true,
+          video: true,
+          mediaType: true,
+          views: true,
+          catSlug: true,
+          userEmail: true,
+          user: {
+            select: {
+              name: true,
+              image: true,
+              email: true,
+            },
           },
+          tags: {
+            select: {
+              name: true,
+            },
+          },
+          votes: {
+            select: {
+              value: true,
+              userId: true,
+            },
+          },
+          _count: {
+            select: {
+              comments: true,
+            },
+          },
+          bookmarks: userEmail
+            ? {
+                where: {
+                  userEmail: userEmail.toLowerCase(),
+                },
+                select: {
+                  id: true,
+                },
+              }
+            : false,
         },
       }),
       prisma.post.count({ where: whereClause }),
     ]);
 
-    // Compute net votes, vote state and bookmark status
+    // Compute net votes, vote state and bookmark status efficiently
     const posts = rawPosts.map((post) => {
       const netVotes = post.votes ? post.votes.reduce((acc, v) => acc + v.value, 0) : 0;
       let currentUserVote = 0;
       if (userEmail && post.votes) {
-        const userVoteRecord = post.votes.find((v) => v.userId === userEmail || (v.user && v.user.email === userEmail));
+        const userVoteRecord = post.votes.find(
+          (v) => v.userId === userEmail || (v.user && v.user.email === userEmail)
+        );
         if (userVoteRecord) currentUserVote = userVoteRecord.value;
       }
-      let isBookmarked = false;
-      if (userEmail && post.bookmarks) {
-        isBookmarked = post.bookmarks.some((b) => b.userEmail?.toLowerCase() === userEmail.toLowerCase());
-      }
+      const isBookmarked = post.bookmarks && post.bookmarks.length > 0;
+      const commentCount = post._count?.comments || 0;
+
+      const { votes, _count, ...rest } = post;
       return {
-        ...post,
+        ...rest,
         netVotes,
         currentUserVote,
         isBookmarked,
+        commentCount,
       };
     });
 
@@ -337,5 +376,41 @@ const votePost = async (req, res) => {
   }
 };
 
-module.exports = { getPosts, getPostBySlug, createPost, updatePost, votePost };
+// Delete Post with User Authorization Check
+const deletePost = async (req, res) => {
+  const { slug } = req.params;
+  const { userEmail } = req.body;
+
+  if (!userEmail) {
+    return res.status(401).json({ message: "User email is required for authorization" });
+  }
+
+  try {
+    const post = await prisma.post.findUnique({
+      where: { slug },
+      select: { id: true, slug: true, userEmail: true },
+    });
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Access Control Guard: Only post author can delete
+    if (post.userEmail.toLowerCase() !== userEmail.toLowerCase()) {
+      return res.status(403).json({ message: "Forbidden: You are not authorized to delete this post" });
+    }
+
+    // Delete post
+    await prisma.post.delete({
+      where: { id: post.id },
+    });
+
+    return res.status(200).json({ message: "Post deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting post:", error);
+    return res.status(500).json({ message: "Failed to delete post" });
+  }
+};
+
+module.exports = { getPosts, getPostBySlug, createPost, updatePost, votePost, deletePost };
 

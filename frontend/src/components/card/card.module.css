@@ -302,3 +302,50 @@
   border-color: var(--accent-green) !important;
   color: #ffffff !important;
 }
+
+/* Responsive Breakpoints Optimization */
+@media screen and (max-width: 640px) {
+  .container {
+    border-radius: 14px;
+    margin-bottom: 12px;
+  }
+  .voteSidebar {
+    width: 42px;
+    padding: 10px 2px;
+  }
+  .mainContent {
+    padding: 12px;
+    gap: 8px;
+  }
+  .title {
+    font-size: 15px;
+  }
+  .descSnippet {
+    font-size: 13px;
+  }
+  .cardFooter {
+    gap: 8px;
+    padding-top: 8px;
+    flex-wrap: wrap;
+  }
+  .actionPill {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .voteSidebar {
+    width: 38px;
+    padding: 8px 2px;
+  }
+  .title {
+    font-size: 14px;
+  }
+  .mediaWrapper {
+    aspect-ratio: 16 / 9;
+  }
+  .readMoreBtn {
+    font-size: 11px;
+  }
+}

@@ -29,8 +29,11 @@ const toggleBookmark = async (req, res) => {
     });
 
     if (existingBookmark) {
-      await prisma.bookmark.delete({
-        where: { id: existingBookmark.id },
+      await prisma.bookmark.deleteMany({
+        where: {
+          userEmail: userEmail.toLowerCase(),
+          postId: post.id,
+        },
       });
       return res.status(200).json({ isBookmarked: false, message: 'Bookmark removed' });
     } else {
@@ -85,8 +88,16 @@ const getUserBookmarks = async (req, res) => {
   }
 };
 
+let trendingTagsCache = null;
+let trendingTagsCacheTime = 0;
+
 // Fetch Trending Hashtags
 const getTrendingHashtags = async (req, res) => {
+  const now = Date.now();
+  if (trendingTagsCache && now - trendingTagsCacheTime < 30000) {
+    return res.status(200).json({ tags: trendingTagsCache });
+  }
+
   try {
     const tags = await prisma.tag.findMany({
       include: {
@@ -102,6 +113,8 @@ const getTrendingHashtags = async (req, res) => {
       take: 8,
     });
 
+    trendingTagsCache = tags;
+    trendingTagsCacheTime = Date.now();
     return res.status(200).json({ tags });
   } catch (error) {
     console.error('Error fetching trending tags:', error);

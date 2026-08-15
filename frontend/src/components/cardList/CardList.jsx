@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import useSWR from "swr";
 import { motion, AnimatePresence } from "framer-motion";
 import styles from "./cardList.module.css";
-import Pagination from "../pagination/Pagination";
 import Card from "../card/Card";
 import SkeletonCard from "../skeleton/SkeletonCard";
 
@@ -40,27 +39,30 @@ const CardList = ({ page = 1, cat = "", tag = "", initialData = null }) => {
     if (page > 1 && (!accumulatedPosts || accumulatedPosts.length < page * 10)) {
       setFetchingMore(true);
       const fetchPages = async () => {
-        let allPosts = [];
-        for (let p = 1; p <= page; p++) {
-          try {
-            const res = await fetch(`${API_URL}/api/posts?page=${p}&cat=${cat || ""}&tag=${tag || ""}&sort=${activeSort}`);
-            if (res.ok) {
-              const resData = await res.json();
-              if (resData?.posts) {
-                allPosts = [...allPosts, ...resData.posts];
-              }
-            }
-          } catch (e) {
-            console.error("Error prefetching page:", e);
+        try {
+          const pagePromises = [];
+          for (let p = 1; p <= page; p++) {
+            pagePromises.push(
+              fetch(`${API_URL}/api/posts?page=${p}&cat=${cat || ""}&tag=${tag || ""}&sort=${activeSort}`).then((res) =>
+                res.ok ? res.json() : null
+              )
+            );
           }
+          const results = await Promise.all(pagePromises);
+          let allPosts = [];
+          results.forEach((resData) => {
+            if (resData?.posts) allPosts.push(...resData.posts);
+          });
+          if (allPosts.length > 0) {
+            const uniqueMap = new Map();
+            allPosts.forEach((item) => uniqueMap.set(item.id || item.slug, item));
+            setAccumulatedPosts(Array.from(uniqueMap.values()));
+          }
+        } catch (e) {
+          console.error("Error prefetching pages:", e);
+        } finally {
+          setFetchingMore(false);
         }
-        if (allPosts.length > 0) {
-          // Remove duplicates
-          const uniqueMap = new Map();
-          allPosts.forEach((item) => uniqueMap.set(item.id || item.slug, item));
-          setAccumulatedPosts(Array.from(uniqueMap.values()));
-        }
-        setFetchingMore(false);
       };
       fetchPages();
     }
@@ -193,7 +195,6 @@ const CardList = ({ page = 1, cat = "", tag = "", initialData = null }) => {
         {/* Intersection Observer Sentinel Anchor */}
         <div ref={observerTarget} style={{ height: 20, margin: "16px 0" }} />
       </div>
-      <Pagination page={currentPage} hasPrev={currentPage > 1} hasNext={hasMore} />
     </div>
   );
 };

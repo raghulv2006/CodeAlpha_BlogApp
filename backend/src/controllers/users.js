@@ -198,6 +198,19 @@ const toggleFollow = async (req, res) => {
         },
       });
       isFollowing = false;
+
+      // Send UNFOLLOW notification to target user
+      await prisma.notification.create({
+        data: {
+          recipientEmail: target.email.toLowerCase(),
+          senderEmail: follower.email.toLowerCase(),
+          senderName: follower.name || followerEmail.split('@')[0],
+          senderImage: follower.image || null,
+          type: 'UNFOLLOW',
+          message: `@${follower.name?.replace(/\s+/g, '_').toLowerCase() || followerEmail.split('@')[0]} unfollowed you`,
+          link: `/profile?email=${encodeURIComponent(follower.email)}`,
+        },
+      });
     } else {
       // Follow
       await prisma.follow.create({
@@ -207,6 +220,19 @@ const toggleFollow = async (req, res) => {
         },
       });
       isFollowing = true;
+
+      // Send FOLLOW notification to target user
+      await prisma.notification.create({
+        data: {
+          recipientEmail: target.email.toLowerCase(),
+          senderEmail: follower.email.toLowerCase(),
+          senderName: follower.name || followerEmail.split('@')[0],
+          senderImage: follower.image || null,
+          type: 'FOLLOW',
+          message: `@${follower.name?.replace(/\s+/g, '_').toLowerCase() || followerEmail.split('@')[0]} started following you`,
+          link: `/profile?email=${encodeURIComponent(follower.email)}`,
+        },
+      });
     }
 
     const followerCount = await prisma.follow.count({
@@ -322,6 +348,46 @@ const dismissWelcome = async (req, res) => {
   }
 };
 
+// Search Users by Name or Email
+const searchUsers = async (req, res) => {
+  const q = req.query.q || req.query.query || '';
+  if (!q || !q.trim()) {
+    return res.status(200).json({ users: [] });
+  }
+
+  const cleanQ = q.trim().toLowerCase().replace(/^@/, '');
+
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { name: { contains: cleanQ, mode: 'insensitive' } },
+          { email: { contains: cleanQ, mode: 'insensitive' } },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        bio: true,
+        _count: {
+          select: {
+            followedBy: true,
+            Post: true,
+          },
+        },
+      },
+      take: 10,
+    });
+
+    return res.status(200).json({ users });
+  } catch (error) {
+    console.error('Error searching users:', error);
+    return res.status(500).json({ message: 'Failed to search users' });
+  }
+};
+
 module.exports = {
   getUserProfile,
   updateUserProfile,
@@ -329,4 +395,5 @@ module.exports = {
   getFollowers,
   getFollowing,
   dismissWelcome,
+  searchUsers,
 };

@@ -471,7 +471,7 @@ function ProfileContent() {
             {activeTab === "posts" && (
             <div className={styles.postsList}>
               {posts && posts.length > 0 ? (
-                posts.map((item) => <Card item={item} key={item.id} />)
+                posts.map((item) => <Card item={item} key={item.id} showDelete={isOwnProfile} />)
               ) : (
                 <div className={styles.emptyState}>
                   <div className={styles.emptyIcon}>📝</div>

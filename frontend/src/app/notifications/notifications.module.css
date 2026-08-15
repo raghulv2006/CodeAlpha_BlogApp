@@ -1,0 +1,299 @@
+.container {
+  max-width: 800px;
+  margin: 24px auto;
+  padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: var(--textColor);
+}
+
+.headerCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 24px 28px;
+  box-shadow: var(--glass-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.headerTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pageTitle {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--textColor);
+  margin: 0;
+}
+
+.unreadBadge {
+  background: var(--accent-green);
+  color: #000000;
+  font-weight: 800;
+  font-size: 0.8rem;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  box-shadow: 0 0 10px var(--accent-green-glow);
+}
+
+.actionBtnGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.secondaryBtn {
+  background: var(--softBg);
+  border: 1px solid var(--border-color);
+  color: var(--textColor);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.secondaryBtn:hover {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+}
+
+.filterTabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+}
+
+.tabBtn {
+  background: transparent;
+  border: none;
+  color: var(--softTextColor);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tabBtn:hover {
+  color: var(--textColor);
+  background: var(--softBg);
+}
+
+.activeTab {
+  background: var(--softBg) !important;
+  color: var(--accent-green) !important;
+  font-weight: 700;
+}
+
+/* Notification List Section */
+.notificationList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notificationCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.notificationCard:hover {
+  border-color: var(--accent-green);
+  box-shadow: 0 4px 16px var(--accent-green-glow);
+  transform: translateY(-1px);
+}
+
+.unreadCard {
+  background: var(--softBg) !important;
+  border-left: 4px solid var(--accent-green) !important;
+}
+
+.cardLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.avatarWrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.defaultAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-green), #047857);
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.typeBadge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  border: 2px solid var(--bg-card);
+}
+
+.followBadge {
+  background: #22c55e;
+  color: #ffffff;
+}
+
+.unfollowBadge {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.commentBadge {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.cardDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.messageText {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--textColor);
+  line-height: 1.4;
+}
+
+.timestamp {
+  font-size: 0.78rem;
+  color: var(--softTextColor);
+}
+
+.cardRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.actionLink {
+  background: var(--softBg);
+  border: 1px solid var(--border-color);
+  color: var(--accent-green);
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.actionLink:hover {
+  background: var(--accent-green);
+  color: #ffffff;
+  border-color: var(--accent-green);
+}
+
+.unreadDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  box-shadow: 0 0 8px var(--accent-green-glow);
+}
+
+.emptyCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.emptyIcon {
+  font-size: 3rem;
+}
+
+.emptyTitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--textColor);
+}
+
+.emptySubtitle {
+  font-size: 0.9rem;
+  color: var(--softTextColor);
+}
+
+@media screen and (max-width: 640px) {
+  .notificationCard {
+    padding: 14px 14px;
+    gap: 10px;
+  }
+  .cardLeft {
+    gap: 10px;
+  }
+  .avatar, .defaultAvatar {
+    width: 38px;
+    height: 38px;
+  }
+  .messageText {
+    font-size: 0.88rem;
+  }
+  .actionLink {
+    padding: 5px 10px;
+    font-size: 0.78rem;
+  }
+}

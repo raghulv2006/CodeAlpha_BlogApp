@@ -152,3 +152,19 @@ model Comment {
   @@index([postSlug])
   @@index([userEmail])
 }
+
+model Notification {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  recipientEmail String
+  senderEmail    String
+  senderName     String?
+  senderImage    String?
+  type           String   // "FOLLOW", "UNFOLLOW", "COMMENT", "VOTE"
+  message        String
+  link           String?
+  read           Boolean  @default(false)
+
+  @@index([recipientEmail])
+  @@index([createdAt])
+}

@@ -76,8 +76,12 @@ const uploadMedia = async (req, res) => {
         fs.mkdirSync(uploadsDir, { recursive: true });
       }
 
-      const ext = path.extname(originalname || '') || (isVideo ? '.mp4' : '.jpg');
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}${ext}`;
+      const SAFE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.mp4', '.webm', '.mov'];
+      let rawExt = path.extname(originalname || '').toLowerCase();
+      if (!SAFE_EXTENSIONS.includes(rawExt)) {
+        rawExt = isVideo ? '.mp4' : '.jpg';
+      }
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}${rawExt}`;
       const filePath = path.join(uploadsDir, fileName);
 
       fs.writeFileSync(filePath, buffer);

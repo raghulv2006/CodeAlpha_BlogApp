@@ -49,6 +49,21 @@
   box-shadow: 0 0 12px var(--accent-green-glow);
 }
 
+.brandLogoImg {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 12px var(--accent-green-glow);
+  transition: transform 0.25s ease;
+}
+
+.brandHeader:hover .brandLogoImg {
+  transform: scale(1.08) rotate(4deg);
+}
+
 .brandText {
   font-size: 20px;
   font-weight: 800;
@@ -95,6 +110,42 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.sidebarPngIcon {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  object-fit: contain;
+  filter: invert(54%) sepia(91%) saturate(1450%) hue-rotate(108deg) brightness(95%) contrast(88%);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), filter 0.25s ease;
+}
+
+/* Green theme icon tint across light & dark themes */
+:global(.dark) .sidebarPngIcon,
+:global([data-theme='dark']) .sidebarPngIcon {
+  filter: invert(54%) sepia(91%) saturate(1450%) hue-rotate(108deg) brightness(95%) contrast(88%);
+}
+
+.navItem:hover .sidebarPngIcon,
+.mobileNavItem:hover .sidebarPngIcon {
+  transform: scale(1.15);
+  filter: invert(54%) sepia(91%) saturate(1450%) hue-rotate(108deg) brightness(95%) contrast(88%) drop-shadow(0 0 6px var(--accent-green-glow));
+}
+
+.activeNavItem .sidebarPngIcon,
+.mobileActiveNavItem .sidebarPngIcon {
+  filter: invert(54%) sepia(91%) saturate(1450%) hue-rotate(108deg) brightness(95%) contrast(88%) drop-shadow(0 0 8px var(--accent-green-glow));
+}
+
+:global(.dark) .activeNavItem .sidebarPngIcon,
+:global(.dark) .mobileActiveNavItem .sidebarPngIcon,
+:global([data-theme='dark']) .activeNavItem .sidebarPngIcon,
+:global([data-theme='dark']) .mobileActiveNavItem .sidebarPngIcon {
+  filter: invert(54%) sepia(91%) saturate(1450%) hue-rotate(108deg) brightness(95%) contrast(88%) drop-shadow(0 0 8px var(--accent-green-glow));
 }
 
 .sidebarFooter {
@@ -111,33 +162,38 @@
   color: var(--softTextColor);
 }
 
+/* Main Layout Area (Wrapper aligning center feed and right sidebar with zero dead space) */
+.mainLayoutWrapper {
+  margin-left: 240px;
+  display: flex;
+  flex: 1;
+  width: calc(100% - 240px);
+  max-width: 1240px;
+  gap: 28px;
+  padding: 24px 24px 80px 24px;
+  box-sizing: border-box;
+}
+
 /* Center Feed Column */
 .centerContent {
   flex: 1;
-  margin-left: 240px;
-  margin-right: 320px;
-  padding: 24px 20px 80px 20px;
-  max-width: 720px;
+  min-width: 0;
   width: 100%;
-
   display: flex;
   flex-direction: column;
 }
 
 /* Right Sidebar (Desktop >= 1024px) */
 .rightSidebar {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
   width: 320px;
-  height: 100vh;
-  padding: 24px 20px;
-  overflow-y: auto;
+  min-width: 320px;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  z-index: 90;
+  position: sticky;
+  top: 24px;
+  height: fit-content;
+  align-self: flex-start;
 }
 
 .widgetCard {
@@ -276,9 +332,7 @@
 @media screen and (max-width: 1280px) {
   .rightSidebar {
     width: 280px;
-  }
-  .centerContent {
-    margin-right: 280px;
+    min-width: 280px;
   }
 }
 
@@ -289,11 +343,14 @@
   .rightSidebar {
     display: none;
   }
-  .centerContent {
+  .mainLayoutWrapper {
     margin-left: 0;
-    margin-right: 0;
+    width: 100%;
     max-width: 100%;
     padding: 16px 16px 80px 16px;
+  }
+  .centerContent {
+    max-width: 100%;
   }
   .mobileBottomBar {
     display: flex;

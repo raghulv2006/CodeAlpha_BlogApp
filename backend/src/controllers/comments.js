@@ -41,6 +41,26 @@ const createComment = async (req, res) => {
       },
     });
 
+    // Trigger Notification for Post Author
+    const post = await prisma.post.findUnique({
+      where: { slug: postSlug },
+      select: { userEmail: true, title: true },
+    });
+
+    if (post?.userEmail && post.userEmail.toLowerCase() !== userEmail.toLowerCase()) {
+      await prisma.notification.create({
+        data: {
+          recipientEmail: post.userEmail.toLowerCase(),
+          senderEmail: user.email.toLowerCase(),
+          senderName: user.name || userEmail.split('@')[0],
+          senderImage: user.image || null,
+          type: 'COMMENT',
+          message: `@${user.name?.replace(/\s+/g, '_').toLowerCase() || userEmail.split('@')[0]} commented on your post "${post.title}"`,
+          link: `/posts/${postSlug}`,
+        },
+      });
+    }
+
     return res.status(200).json(comment);
   } catch (err) {
     console.error('Error creating comment:', err);

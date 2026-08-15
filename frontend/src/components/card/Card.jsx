@@ -8,10 +8,11 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import sanitizeHtml from "sanitize-html";
 import { useSession } from "@/context/AuthContext";
+import DeleteArticleButton from "../deleteArticleButton/DeleteArticleButton";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-const Card = ({ item }) => {
+const Card = ({ item, showDelete = false }) => {
   const router = useRouter();
   const { data: session } = useSession();
   const [votes, setVotes] = useState(item?.netVotes ?? (item?.views ? Math.min(item.views, 12) : 0));
@@ -190,9 +191,12 @@ const Card = ({ item }) => {
             {item?.catSlug ? item.catSlug.charAt(0).toUpperCase() + item.catSlug.slice(1) : ""}
           </Link>
           {isAuthor && (
-            <Link href={`/posts/${item?.slug}/edit`} className={styles.editPill} style={{ marginLeft: "auto", textDecoration: "none", fontSize: "0.75rem", opacity: 0.8 }}>
-              ✏️ Edit
-            </Link>
+            <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+              <Link href={`/posts/${item?.slug}/edit`} className={styles.editPill} style={{ textDecoration: "none", fontSize: "0.75rem", opacity: 0.8 }}>
+                ✏️ Edit
+              </Link>
+              {showDelete && <DeleteArticleButton slug={item?.slug} authorEmail={item?.userEmail} />}
+            </div>
           )}
         </div>
 

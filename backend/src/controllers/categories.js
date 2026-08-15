@@ -13,23 +13,30 @@ const DEFAULT_CATEGORIES = [
   { slug: 'news', title: 'News' },
 ];
 
-const getCategories = async (req, res) => {
-  try {
-    // Ensure default categories exist in database
-    await Promise.all(
-      DEFAULT_CATEGORIES.map((cat) =>
-        prisma.category.upsert({
-          where: { slug: cat.slug },
-          update: {},
-          create: { slug: cat.slug, title: cat.title },
-        })
-      )
-    );
+let categoriesCache = null;
+let cacheTime = 0;
 
-    const categories = await prisma.category.findMany({
+const getCategories = async (req, res) => {
+  const now = Date.now();
+  if (categoriesCache && now - cacheTime < 60000) {
+    return res.status(200).json(categoriesCache);
+  }
+
+  try {
+    let categories = await prisma.category.findMany({
       orderBy: { title: 'asc' },
     });
 
+    if (categories.length === 0) {
+      await prisma.category.createMany({
+        data: DEFAULT_CATEGORIES.map((cat) => ({ slug: cat.slug, title: cat.title })),
+        skipDuplicates: true,
+      });
+      categories = await prisma.category.findMany({ orderBy: { title: 'asc' } });
+    }
+
+    categoriesCache = categories;
+    cacheTime = Date.now();
     return res.status(200).json(categories);
   } catch (error) {
     console.error('Error fetching categories:', error);
