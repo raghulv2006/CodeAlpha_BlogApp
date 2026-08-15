@@ -17,6 +17,12 @@ import styles from "./appShell.module.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const fetcher = (url) => fetch(url).then((res) => (res.ok ? res.json() : null));
+const authFetcher = (url) => {
+  // Dynamically import to avoid SSR issues
+  return import("@/utils/api").then(({ authFetch }) =>
+    authFetch(url).then((res) => (res.ok ? res.json() : null))
+  );
+};
 
 export default function AppShell({ children }) {
   const pathname = usePathname();
@@ -38,10 +44,10 @@ export default function AppShell({ children }) {
     }
   );
 
-  // Unread Notifications Count
+  // Unread Notifications Count (uses authFetcher since this route requires authentication)
   const { data: notifData } = useSWR(
     session?.user?.email ? `${API_URL}/api/notifications?email=${encodeURIComponent(session.user.email)}` : null,
-    fetcher,
+    authFetcher,
     { refreshInterval: 15000 }
   );
 

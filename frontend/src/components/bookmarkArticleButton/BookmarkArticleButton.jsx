@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useSession } from "@/context/AuthContext";
 import { motion } from "framer-motion";
+import { authFetch } from "@/utils/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -22,7 +23,7 @@ export default function BookmarkArticleButton({ slug, initialBookmarked = false 
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}/api/posts/${slug}/bookmark`, {
+      const res = await authFetch(`${API_URL}/api/posts/${slug}/bookmark`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userEmail: session.user.email }),

@@ -30,10 +30,11 @@ const {
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
+const { authMiddleware } = require('../middleware/auth');
 
 // Categories
 router.get('/categories', getCategories);
-router.post('/categories', createCategory);
+router.post('/categories', authMiddleware, createCategory);
 
 // Tags
 router.get('/tags', getTags);
@@ -42,33 +43,33 @@ router.get('/tags/trending', getTrendingHashtags);
 // Posts
 router.get('/posts', getPosts);
 router.get('/posts/:slug', getPostBySlug);
-router.post('/posts', createPost);
-router.put('/posts/:slug', updatePost);
-router.delete('/posts/:slug', deletePost);
-router.post('/posts/:slug/vote', votePost);
-router.post('/posts/:slug/bookmark', toggleBookmark);
+router.post('/posts', authMiddleware, createPost);
+router.put('/posts/:slug', authMiddleware, updatePost);
+router.delete('/posts/:slug', authMiddleware, deletePost);
+router.post('/posts/:slug/vote', authMiddleware, votePost);
+router.post('/posts/:slug/bookmark', authMiddleware, toggleBookmark);
 
 // Comments
 router.get('/comments', getComments);
-router.post('/comments', createComment);
+router.post('/comments', authMiddleware, createComment);
 
 // Notifications
-router.get('/notifications', getNotifications);
-router.post('/notifications/read', markNotificationsRead);
-router.post('/notifications/clear', clearNotifications);
+router.get('/notifications', authMiddleware, getNotifications);
+router.post('/notifications/read', authMiddleware, markNotificationsRead);
+router.post('/notifications/clear', authMiddleware, clearNotifications);
 
 // User Profile, Bookmarks & Follows
 router.get('/users/search', searchUsers);
 router.get('/users/profile', getUserProfile);
-router.put('/users/profile', updateUserProfile);
-router.post('/users/follow', toggleFollow);
+router.put('/users/profile', authMiddleware, updateUserProfile);
+router.post('/users/follow', authMiddleware, toggleFollow);
 router.get('/users/followers', getFollowers);
 router.get('/users/following', getFollowing);
 router.get('/users/suggested', getSuggestedUsers);
-router.get('/users/me/bookmarks', getUserBookmarks);
-router.post('/users/dismiss-welcome', dismissWelcome);
+router.get('/users/me/bookmarks', authMiddleware, getUserBookmarks);
+router.post('/users/dismiss-welcome', authMiddleware, dismissWelcome);
 
-// Cloudinary Media Upload
-router.post('/upload', upload.single('file'), uploadMedia);
+// Cloudinary Media Upload (auth required to prevent anonymous abuse)
+router.post('/upload', authMiddleware, upload.single('file'), uploadMedia);
 
 module.exports = router;

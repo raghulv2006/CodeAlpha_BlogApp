@@ -29,9 +29,10 @@ async function getInitialData(page, cat, tag) {
 }
 
 export default async function Home({ searchParams }) {
-  const page = parseInt(searchParams?.page) || 1;
-  const cat = searchParams?.cat || "";
-  const tag = searchParams?.tag || "";
+  const sp = await Promise.resolve(searchParams);
+  const page = parseInt(sp?.page) || 1;
+  const cat = sp?.cat || "";
+  const tag = sp?.tag || "";
 
   const { initialPosts, initialCategories } = await getInitialData(page, cat, tag);
 

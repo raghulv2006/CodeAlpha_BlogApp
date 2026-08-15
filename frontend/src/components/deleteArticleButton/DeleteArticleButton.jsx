@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { authFetch } from "@/utils/api";
 import { useSession } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -23,7 +24,7 @@ export default function DeleteArticleButton({ slug, authorEmail }) {
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      const res = await fetch(`${API_URL}/api/posts/${slug}`, {
+      const res = await authFetch(`${API_URL}/api/posts/${slug}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userEmail: session.user.email }),

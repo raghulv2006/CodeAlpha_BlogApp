@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import styles from "./featured.module.css";
 import Image from "next/image";
+import { authFetch } from "@/utils/api";
 import Link from "next/link";
 import { useSession } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -43,7 +44,7 @@ const Featured = () => {
     if (session?.user?.email) {
       localStorage.setItem(`hasSeenWelcome_${session.user.email}`, "true");
       try {
-        await fetch(`${API_URL}/api/users/dismiss-welcome`, {
+        await authFetch(`${API_URL}/api/users/dismiss-welcome`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: session.user.email }),

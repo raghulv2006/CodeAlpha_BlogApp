@@ -20,18 +20,18 @@ const getComments = async (req, res) => {
 };
 
 const createComment = async (req, res) => {
-  const { desc, postSlug, userEmail } = req.body;
+  const { desc, postSlug } = req.body;
+  const user = req.user;
 
-  if (!userEmail) {
-    return res.status(401).json({ message: 'User email required!' });
+  if (!desc || !desc.trim()) {
+    return res.status(400).json({ message: 'Comment cannot be empty' });
+  }
+
+  if (desc.length > 10000) {
+    return res.status(400).json({ message: 'Comment exceeds maximum allowed length' });
   }
 
   try {
-    const user = await prisma.user.upsert({
-      where: { email: userEmail },
-      update: {},
-      create: { email: userEmail, name: userEmail.split('@')[0] },
-    });
 
     const comment = await prisma.comment.create({
       data: {
@@ -47,15 +47,15 @@ const createComment = async (req, res) => {
       select: { userEmail: true, title: true },
     });
 
-    if (post?.userEmail && post.userEmail.toLowerCase() !== userEmail.toLowerCase()) {
+    if (post?.userEmail && post.userEmail.toLowerCase() !== user.email.toLowerCase()) {
       await prisma.notification.create({
         data: {
           recipientEmail: post.userEmail.toLowerCase(),
           senderEmail: user.email.toLowerCase(),
-          senderName: user.name || userEmail.split('@')[0],
+          senderName: user.name || user.email.split('@')[0],
           senderImage: user.image || null,
           type: 'COMMENT',
-          message: `@${user.name?.replace(/\s+/g, '_').toLowerCase() || userEmail.split('@')[0]} commented on your post "${post.title}"`,
+          message: `@${user.name?.replace(/\s+/g, '_').toLowerCase() || user.email.split('@')[0]} commented on your post "${post.title}"`,
           link: `/posts/${postSlug}`,
         },
       });

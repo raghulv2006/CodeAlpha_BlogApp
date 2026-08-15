@@ -25,14 +25,23 @@ const uploadMedia = async (req, res) => {
 
     const { mimetype, size, buffer, originalname } = req.file;
 
-    // Security Check: Mimetype Whitelist
+    // Security Check: Mimetype Whitelist (Header based)
     if (!ALLOWED_MIME_TYPES.includes(mimetype)) {
       return res.status(400).json({
         message: 'Invalid file type. Only JPEG, PNG, WEBP, GIF, MP4, and WEBM formats are permitted.',
       });
     }
 
-    const isVideo = mimetype.startsWith('video/');
+    // Security Check: Magic Bytes Verification
+    const { fileTypeFromBuffer } = await import('file-type');
+    const type = await fileTypeFromBuffer(buffer);
+    if (!type || !ALLOWED_MIME_TYPES.includes(type.mime)) {
+      return res.status(400).json({
+        message: 'Invalid file content. File failed magic byte verification.',
+      });
+    }
+
+    const isVideo = type.mime.startsWith('video/');
     const resourceType = isVideo ? 'video' : 'image';
     const maxAllowedSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
 
@@ -86,15 +95,14 @@ const uploadMedia = async (req, res) => {
 
       fs.writeFileSync(filePath, buffer);
 
-      const host = req.get('host');
-      const protocol = req.protocol;
-      const localUrl = `${protocol}://${host}/uploads/${fileName}`;
+      const baseUrl = process.env.API_BASE_URL || 'http://localhost:5000';
+      const localUrl = `${baseUrl}/uploads/${fileName}`;
 
       return res.status(200).json({
         url: localUrl,
         mediaType: resourceType,
         publicId: fileName,
-        fallbackNotice: 'Cloudinary upload failed (HTTP 403 / Invalid Credentials). Saved locally.',
+        notice: 'Media saved via alternate storage',
       });
     }
   } catch (error) {

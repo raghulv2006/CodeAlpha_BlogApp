@@ -2,22 +2,18 @@ const prisma = require('../utils/prisma');
 
 // Get User Notifications
 const getNotifications = async (req, res) => {
-  const { email } = req.query;
-
-  if (!email) {
-    return res.status(400).json({ message: 'User email is required' });
-  }
+  const user = req.user;
 
   try {
     const notifications = await prisma.notification.findMany({
-      where: { recipientEmail: email.toLowerCase() },
+      where: { recipientEmail: user.email.toLowerCase() },
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
 
     const unreadCount = await prisma.notification.count({
       where: {
-        recipientEmail: email.toLowerCase(),
+        recipientEmail: user.email.toLowerCase(),
         read: false,
       },
     });
@@ -31,21 +27,18 @@ const getNotifications = async (req, res) => {
 
 // Mark Notifications as Read
 const markNotificationsRead = async (req, res) => {
-  const { email, notificationId } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ message: 'User email is required' });
-  }
+  const { notificationId } = req.body;
+  const user = req.user;
 
   try {
     if (notificationId) {
       await prisma.notification.updateMany({
-        where: { id: notificationId, recipientEmail: email.toLowerCase() },
+        where: { id: notificationId, recipientEmail: user.email.toLowerCase() },
         data: { read: true },
       });
     } else {
       await prisma.notification.updateMany({
-        where: { recipientEmail: email.toLowerCase(), read: false },
+        where: { recipientEmail: user.email.toLowerCase(), read: false },
         data: { read: true },
       });
     }
@@ -59,15 +52,11 @@ const markNotificationsRead = async (req, res) => {
 
 // Clear All Notifications
 const clearNotifications = async (req, res) => {
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ message: 'User email is required' });
-  }
+  const user = req.user;
 
   try {
     await prisma.notification.deleteMany({
-      where: { recipientEmail: email.toLowerCase() },
+      where: { recipientEmail: user.email.toLowerCase() },
     });
 
     return res.status(200).json({ message: 'All notifications cleared' });

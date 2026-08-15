@@ -9,6 +9,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import sanitizeHtml from "sanitize-html";
 import { useSession } from "@/context/AuthContext";
 import DeleteArticleButton from "../deleteArticleButton/DeleteArticleButton";
+import BookmarkArticleButton from "../bookmarkArticleButton/BookmarkArticleButton";
+import { authFetch } from "@/utils/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -56,7 +58,7 @@ const Card = ({ item, showDelete = false }) => {
     setVotes((prev) => prev + voteDiff);
 
     try {
-      const res = await fetch(`${API_URL}/api/posts/${item.slug}/vote`, {
+      const res = await authFetch(`${API_URL}/api/posts/${item.slug}/vote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -89,7 +91,7 @@ const Card = ({ item, showDelete = false }) => {
     setIsBookmarked(newBookmarked);
 
     try {
-      const res = await fetch(`${API_URL}/api/posts/${item.slug}/bookmark`, {
+      const res = await authFetch(`${API_URL}/api/posts/${item.slug}/bookmark`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userEmail: session.user.email }),

@@ -66,10 +66,15 @@ const csrfOriginGuard = (req, res, next) => {
   }
 
   const origin = req.headers.origin || req.headers.referer;
-  const isDev = process.env.NODE_ENV !== 'production';
+  const isProd = process.env.NODE_ENV === 'production';
 
-  // In production, enforce origin matching
-  if (!isDev && origin) {
+  // In production, reject requests that have no Origin/Referer header at all
+  if (isProd && !origin) {
+    console.warn(`[SECURITY ALERT] Blocked request missing Origin header: ${req.method} ${req.path}`);
+    return res.status(403).json({ message: 'Forbidden: Origin header is required' });
+  }
+
+  if (origin) {
     const allowedOrigins = [
       'http://localhost:3000',
       process.env.CLIENT_URL,

@@ -59,6 +59,31 @@ const LoginPage = () => {
     };
   }, [activeTab]);
 
+  const formatAuthError = (err) => {
+    const msg = err?.message || "";
+    const code = err?.code || "";
+    
+    if (code === "auth/popup-closed-by-user") {
+      return "Sign-in window was closed before completing.";
+    }
+    if (code === "auth/operation-not-allowed" || msg.includes("operation-not-allowed")) {
+      return "This sign-in provider is not enabled in Firebase Console (Authentication -> Sign-in method).";
+    }
+    if (code === "auth/unauthorized-domain" || msg.includes("unauthorized-domain")) {
+      return "Domain not authorized. Ensure 'localhost' is in Firebase Console -> Authentication -> Authorized domains.";
+    }
+    if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found") {
+      return "Invalid email or password. Please check your credentials.";
+    }
+    if (code === "auth/email-already-in-use") {
+      return "An account already exists with this email. Please log in instead.";
+    }
+    if (msg.includes("Database is closing") || msg.includes("IndexedDB") || msg.includes("hidden")) {
+      return "Browser local storage was busy. Please click the button once more to sign in.";
+    }
+    return msg || "Authentication failed. Please try again.";
+  };
+
   // Handle Social Login (Google / GitHub)
   const handleSocialLogin = async (provider) => {
     setError("");
@@ -72,7 +97,7 @@ const LoginPage = () => {
       router.push("/");
     } catch (err) {
       console.error("Social login error:", err);
-      setError(err.message || "Failed to authenticate with social provider");
+      setError(formatAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -93,11 +118,12 @@ const LoginPage = () => {
       router.push("/");
     } catch (err) {
       console.error("Email auth error:", err);
-      setError(err.message || "Authentication failed. Check your credentials.");
+      setError(formatAuthError(err));
     } finally {
       setLoading(false);
     }
   };
+
 
   // Initialize Recaptcha for Phone Auth
   const setupRecaptcha = () => {

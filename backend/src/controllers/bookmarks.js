@@ -3,11 +3,7 @@ const prisma = require('../utils/prisma');
 // Toggle Bookmark for a Post
 const toggleBookmark = async (req, res) => {
   const { slug } = req.params;
-  const { userEmail } = req.body;
-
-  if (!userEmail) {
-    return res.status(401).json({ message: 'User email is required' });
-  }
+  const user = req.user;
 
   try {
     const post = await prisma.post.findUnique({
@@ -22,7 +18,7 @@ const toggleBookmark = async (req, res) => {
     const existingBookmark = await prisma.bookmark.findUnique({
       where: {
         userEmail_postId: {
-          userEmail: userEmail.toLowerCase(),
+          userEmail: user.email.toLowerCase(),
           postId: post.id,
         },
       },
@@ -31,7 +27,7 @@ const toggleBookmark = async (req, res) => {
     if (existingBookmark) {
       await prisma.bookmark.deleteMany({
         where: {
-          userEmail: userEmail.toLowerCase(),
+          userEmail: user.email.toLowerCase(),
           postId: post.id,
         },
       });
@@ -39,7 +35,7 @@ const toggleBookmark = async (req, res) => {
     } else {
       await prisma.bookmark.create({
         data: {
-          userEmail: userEmail.toLowerCase(),
+          userEmail: user.email.toLowerCase(),
           postId: post.id,
         },
       });
@@ -53,15 +49,11 @@ const toggleBookmark = async (req, res) => {
 
 // Fetch User's Bookmarks
 const getUserBookmarks = async (req, res) => {
-  const { userEmail } = req.query;
-
-  if (!userEmail) {
-    return res.status(400).json({ message: 'User email is required' });
-  }
+  const user = req.user;
 
   try {
     const bookmarks = await prisma.bookmark.findMany({
-      where: { userEmail: userEmail.toLowerCase() },
+      where: { userEmail: user.email.toLowerCase() },
       include: {
         post: {
           include: {
@@ -88,15 +80,8 @@ const getUserBookmarks = async (req, res) => {
   }
 };
 
-let trendingTagsCache = null;
-let trendingTagsCacheTime = 0;
-
 // Fetch Trending Hashtags
 const getTrendingHashtags = async (req, res) => {
-  const now = Date.now();
-  if (trendingTagsCache && now - trendingTagsCacheTime < 30000) {
-    return res.status(200).json({ tags: trendingTagsCache });
-  }
 
   try {
     const tags = await prisma.tag.findMany({
@@ -113,8 +98,6 @@ const getTrendingHashtags = async (req, res) => {
       take: 8,
     });
 
-    trendingTagsCache = tags;
-    trendingTagsCacheTime = Date.now();
     return res.status(200).json({ tags });
   } catch (error) {
     console.error('Error fetching trending tags:', error);
@@ -134,7 +117,6 @@ const getSuggestedUsers = async (req, res) => {
       select: {
         id: true,
         name: true,
-        email: true,
         image: true,
         bio: true,
         _count: {

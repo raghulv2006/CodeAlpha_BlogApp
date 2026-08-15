@@ -17,9 +17,10 @@ async function getInitialPosts(page, cat, tag) {
 }
 
 const BlogPage = async ({ searchParams }) => {
-  const page = parseInt(searchParams?.page) || 1;
-  const cat = searchParams?.cat || "";
-  const tag = searchParams?.tag || "";
+  const sp = await Promise.resolve(searchParams);
+  const page = parseInt(sp?.page) || 1;
+  const cat = sp?.cat || "";
+  const tag = sp?.tag || "";
 
   const initialPosts = await getInitialPosts(page, cat, tag);
 

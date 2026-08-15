@@ -7,6 +7,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import styles from "./profile.module.css";
 import Card from "@/components/card/Card";
+import { authFetch } from "@/utils/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -45,7 +46,7 @@ function ProfileContent() {
     const formData = new FormData();
     formData.append("file", file);
 
-    fetch(`${API_URL}/api/upload`, {
+    authFetch(`${API_URL}/api/upload`, {
       method: "POST",
       body: formData,
     })
@@ -82,7 +83,7 @@ function ProfileContent() {
           ? session.user.image
           : "";
 
-      const res = await fetch(
+      const res = await authFetch(
         `${API_URL}/api/users/profile?email=${encodeURIComponent(
           targetEmail
         )}&currentUserEmail=${encodeURIComponent(currentEmail)}${
@@ -109,7 +110,7 @@ function ProfileContent() {
   const fetchPosts = React.useCallback(async () => {
     if (!targetEmail) return;
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${API_URL}/api/posts?userEmail=${encodeURIComponent(targetEmail)}`
       );
       if (res.ok) {
@@ -125,7 +126,7 @@ function ProfileContent() {
   const fetchFollowersList = React.useCallback(async () => {
     if (!targetEmail) return;
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${API_URL}/api/users/followers?email=${encodeURIComponent(targetEmail)}`
       );
       if (res.ok) {
@@ -141,7 +142,7 @@ function ProfileContent() {
   const fetchFollowingList = React.useCallback(async () => {
     if (!targetEmail) return;
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${API_URL}/api/users/following?email=${encodeURIComponent(targetEmail)}`
       );
       if (res.ok) {
@@ -158,7 +159,7 @@ function ProfileContent() {
     if (!targetEmail) return;
     setLoadingBookmarks(true);
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${API_URL}/api/users/me/bookmarks?userEmail=${encodeURIComponent(targetEmail)}`
       );
       if (res.ok) {
@@ -196,7 +197,7 @@ function ProfileContent() {
     }
 
     try {
-      const res = await fetch(`${API_URL}/api/users/follow`, {
+      const res = await authFetch(`${API_URL}/api/users/follow`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -221,7 +222,7 @@ function ProfileContent() {
     setUpdating(true);
 
     try {
-      const res = await fetch(`${API_URL}/api/users/profile`, {
+      const res = await authFetch(`${API_URL}/api/users/profile`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

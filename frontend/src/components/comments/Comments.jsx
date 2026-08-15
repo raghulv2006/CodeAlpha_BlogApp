@@ -6,6 +6,7 @@ import Image from "next/image";
 import useSWR from "swr";
 import { useSession } from "@/context/AuthContext";
 import { useState } from "react";
+import { auth } from "@/utils/firebase";
 import { motion, AnimatePresence } from "framer-motion";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -36,13 +37,19 @@ const Comments = ({ postSlug }) => {
 
   const handleSubmit = async () => {
     if (!desc.trim()) return;
+    if (!session?.user?.email) return;
+    
     setSubmitting(true);
-    const userEmail = session?.user?.email || "anonymous@botblogs.dev";
+    
     try {
+      const idToken = await auth.currentUser?.getIdToken();
       const res = await fetch(`${API_URL}/api/comments`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ desc, postSlug, userEmail }),
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ desc, postSlug }),
       });
 
       if (res.ok) {

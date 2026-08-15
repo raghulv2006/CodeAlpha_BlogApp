@@ -1,14 +1,17 @@
 "use client";
 
+import "react-quill/dist/quill.snow.css";
 import React, { useState, useEffect, useRef } from "react";
 import styles from "./postComposer.module.css";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/context/AuthContext";
+import { authFetch } from "@/utils/api";
+import { auth } from "@/utils/firebase";
 import useSWR from "swr";
 import { motion, AnimatePresence } from "framer-motion";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-const fetcher = (url) => fetch(url).then((res) => res.json());
+const fetcher = (url) => authFetch(url).then((res) => res.json());
 
 const PostComposer = ({ isEdit = false, initialPost = null }) => {
   const { status, data: session } = useSession();
@@ -83,8 +86,8 @@ const PostComposer = ({ isEdit = false, initialPost = null }) => {
     return null;
   }
 
-  // Upload file logic with XHR to track progress
-  const uploadFile = (file) => {
+  // Upload file logic with XHR to track progress + auth token
+  const uploadFile = async (file) => {
     if (!file) return;
     setUploading(true);
     setUploadProgress(10);
@@ -92,8 +95,21 @@ const PostComposer = ({ isEdit = false, initialPost = null }) => {
     const formData = new FormData();
     formData.append("file", file);
 
+    // Get auth token for the upload request
+    let token = null;
+    if (auth.currentUser) {
+      try {
+        token = await auth.currentUser.getIdToken();
+      } catch (e) {
+        console.error("Failed to get upload token:", e);
+      }
+    }
+
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_URL}/api/upload`);
+    if (token) {
+      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    }
 
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) {
@@ -119,6 +135,8 @@ const PostComposer = ({ isEdit = false, initialPost = null }) => {
         } catch (e) {
           alert("Error parsing media response.");
         }
+      } else if (xhr.status === 401) {
+        alert("You must be logged in to upload media.");
       } else {
         alert("Failed to upload file.");
       }
@@ -164,7 +182,7 @@ const PostComposer = ({ isEdit = false, initialPost = null }) => {
     setCreatingCat(true);
 
     try {
-      const res = await fetch(`${API_URL}/api/categories`, {
+      const res = await authFetch(`${API_URL}/api/categories`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: newCatTitle }),
@@ -202,7 +220,13 @@ const PostComposer = ({ isEdit = false, initialPost = null }) => {
     }
 
     setSubmitting(true);
-    const userEmail = session?.user?.email || "anonymous@botblogs.dev";
+
+    // Guard: ensure user is authenticated before submitting
+    if (!session?.user?.email) {
+      alert("You must be logged in to create a post.");
+      setSubmitting(false);
+      return;
+    }
 
     try {
       const endpoint = isEdit
@@ -217,7 +241,6 @@ const PostComposer = ({ isEdit = false, initialPost = null }) => {
         video: videoUrl || null,
         mediaType: mediaType || null,
         catSlug: catSlug || "style",
-        userEmail,
         tags,
       };
 
@@ -225,7 +248,7 @@ const PostComposer = ({ isEdit = false, initialPost = null }) => {
         bodyData.slug = slugify(title) + "-" + Date.now().toString().slice(-4);
       }
 
-      const res = await fetch(endpoint, {
+      const res = await authFetch(endpoint, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(bodyData),

@@ -1,16 +1,16 @@
 const prisma = require('../utils/prisma');
 
-// Get Profile details for a specific user email
+// Get Profile details for a specific user email (Read-only, secure)
 const getUserProfile = async (req, res) => {
-  const { email, currentUserEmail, image } = req.query;
+  const { email, currentUserEmail } = req.query;
 
-  if (!email) {
+  if (!email || typeof email !== 'string') {
     return res.status(400).json({ message: 'User email parameter is required' });
   }
 
   try {
-    let user = await prisma.user.findUnique({
-      where: { email },
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
       select: {
         id: true,
         name: true,
@@ -23,40 +23,7 @@ const getUserProfile = async (req, res) => {
     });
 
     if (!user) {
-      // Create user if not exists yet
-      user = await prisma.user.upsert({
-        where: { email },
-        update: {
-          ...(image && { image }),
-        },
-        create: {
-          email,
-          name: email.split('@')[0],
-          image: image || null,
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-          bio: true,
-          createdAt: true,
-        },
-      });
-    } else if (image && (!user.image || user.image !== image)) {
-      // Auto-sync image if provided and changed
-      user = await prisma.user.update({
-        where: { email },
-        data: { image },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-          bio: true,
-          createdAt: true,
-        },
-      });
+      return res.status(404).json({ message: 'User not found' });
     }
 
     // Counts & Stats
@@ -115,23 +82,45 @@ const getUserProfile = async (req, res) => {
 
 // Update Profile
 const updateUserProfile = async (req, res) => {
-  const { email, name, bio, image } = req.body;
+  const { name, bio, image } = req.body;
+  // SECURITY: Use verified identity from auth middleware — NEVER trust req.body.email
+  const email = req.user.email;
 
-  if (!email) {
-    return res.status(400).json({ message: 'User email is required' });
+  if (name && typeof name !== 'string') {
+    return res.status(400).json({ message: 'Invalid name value' });
+  }
+
+  if (name && name.length > 100) {
+    return res.status(400).json({ message: 'Name exceeds 100 characters' });
+  }
+
+  if (bio && bio.length > 300) {
+    return res.status(400).json({ message: 'Bio exceeds 300 characters' });
+  }
+
+  // Basic URL validation for image (if provided)
+  if (image && typeof image === 'string' && image.length > 0) {
+    try {
+      const url = new URL(image);
+      if (!['https:', 'http:'].includes(url.protocol)) {
+        return res.status(400).json({ message: 'Image URL must use http or https' });
+      }
+    } catch {
+      return res.status(400).json({ message: 'Invalid image URL' });
+    }
   }
 
   try {
     const updatedUser = await prisma.user.upsert({
       where: { email },
       update: {
-        ...(name && { name }),
+        ...(name && { name: name.trim() }),
         ...(bio !== undefined && { bio }),
         ...(image !== undefined && { image }),
       },
       create: {
         email,
-        name: name || email.split('@')[0],
+        name: name ? name.trim() : email.split('@')[0],
         bio: bio || '',
         image: image || null,
       },
@@ -154,28 +143,25 @@ const updateUserProfile = async (req, res) => {
 
 // Toggle Follow/Unfollow
 const toggleFollow = async (req, res) => {
-  const { followerEmail, targetEmail } = req.body;
+  const { targetEmail } = req.body;
+  const follower = req.user;
 
-  if (!followerEmail || !targetEmail) {
-    return res.status(400).json({ message: 'Follower and target user emails are required' });
+  if (!targetEmail) {
+    return res.status(400).json({ message: 'Target user email is required' });
   }
 
-  if (followerEmail === targetEmail) {
+  if (follower.email.toLowerCase() === targetEmail.toLowerCase()) {
     return res.status(400).json({ message: 'You cannot follow yourself' });
   }
 
   try {
-    const follower = await prisma.user.upsert({
-      where: { email: followerEmail },
-      update: {},
-      create: { email: followerEmail, name: followerEmail.split('@')[0] },
+    const target = await prisma.user.findUnique({
+      where: { email: targetEmail },
     });
 
-    const target = await prisma.user.upsert({
-      where: { email: targetEmail },
-      update: {},
-      create: { email: targetEmail, name: targetEmail.split('@')[0] },
-    });
+    if (!target) {
+      return res.status(404).json({ message: 'Target user not found' });
+    }
 
     const existingFollow = await prisma.follow.findUnique({
       where: {
@@ -204,10 +190,10 @@ const toggleFollow = async (req, res) => {
         data: {
           recipientEmail: target.email.toLowerCase(),
           senderEmail: follower.email.toLowerCase(),
-          senderName: follower.name || followerEmail.split('@')[0],
+          senderName: follower.name || follower.email.split('@')[0],
           senderImage: follower.image || null,
           type: 'UNFOLLOW',
-          message: `@${follower.name?.replace(/\s+/g, '_').toLowerCase() || followerEmail.split('@')[0]} unfollowed you`,
+          message: `@${follower.name?.replace(/\s+/g, '_').toLowerCase() || follower.email.split('@')[0]} unfollowed you`,
           link: `/profile?email=${encodeURIComponent(follower.email)}`,
         },
       });
@@ -226,10 +212,10 @@ const toggleFollow = async (req, res) => {
         data: {
           recipientEmail: target.email.toLowerCase(),
           senderEmail: follower.email.toLowerCase(),
-          senderName: follower.name || followerEmail.split('@')[0],
+          senderName: follower.name || follower.email.split('@')[0],
           senderImage: follower.image || null,
           type: 'FOLLOW',
-          message: `@${follower.name?.replace(/\s+/g, '_').toLowerCase() || followerEmail.split('@')[0]} started following you`,
+          message: `@${follower.name?.replace(/\s+/g, '_').toLowerCase() || follower.email.split('@')[0]} started following you`,
           link: `/profile?email=${encodeURIComponent(follower.email)}`,
         },
       });
@@ -328,17 +314,12 @@ const getFollowing = async (req, res) => {
 
 // Dismiss Welcome Banner
 const dismissWelcome = async (req, res) => {
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ message: 'Email required' });
-  }
+  const user = req.user;
 
   try {
-    await prisma.user.upsert({
-      where: { email },
-      update: { hasSeenWelcome: true },
-      create: { email, name: email.split('@')[0], hasSeenWelcome: true },
+    await prisma.user.update({
+      where: { email: user.email },
+      data: { hasSeenWelcome: true },
     });
 
     return res.status(200).json({ success: true, hasSeenWelcome: true });
@@ -356,6 +337,10 @@ const searchUsers = async (req, res) => {
   }
 
   const cleanQ = q.trim().toLowerCase().replace(/^@/, '');
+  
+  if (cleanQ.length < 2) {
+    return res.status(200).json({ users: [] });
+  }
 
   try {
     const users = await prisma.user.findMany({
@@ -368,12 +353,11 @@ const searchUsers = async (req, res) => {
       select: {
         id: true,
         name: true,
-        email: true,
+        // SECURITY: email excluded from public search to prevent enumeration
         image: true,
         bio: true,
         _count: {
           select: {
-            followedBy: true,
             Post: true,
           },
         },
@@ -381,7 +365,13 @@ const searchUsers = async (req, res) => {
       take: 10,
     });
 
-    return res.status(200).json({ users });
+    // Derive handle from name only (not email) for public display
+    const safeUsers = users.map((u) => ({
+      ...u,
+      handle: u.name?.replace(/\s+/g, '_').toLowerCase() || 'user',
+    }));
+
+    return res.status(200).json({ users: safeUsers });
   } catch (error) {
     console.error('Error searching users:', error);
     return res.status(500).json({ message: 'Failed to search users' });

@@ -26,7 +26,8 @@ const getData = async (slug) => {
 };
 
 const SinglePage = async ({ params }) => {
-  const { slug } = params;
+  const resolvedParams = await Promise.resolve(params);
+  const slug = resolvedParams?.slug;
   const data = await getData(slug);
 
   if (!data) {
@@ -114,6 +115,12 @@ const SinglePage = async ({ params }) => {
                   video: ["src", "controls", "width", "height", "autoplay", "muted", "loop"],
                   source: ["src", "type"],
                   iframe: ["src", "width", "height", "allowfullscreen"],
+                },
+                allowedSchemes: ["https", "http", "mailto"],
+                allowedSchemesByTag: {
+                  img: ["https", "http", "data"],
+                  iframe: ["https"], // Only allow https iframes to prevent javascript: and data: URIs
+                  a: ["https", "http", "mailto"],
                 },
               }),
             }}

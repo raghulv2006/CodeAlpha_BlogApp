@@ -47,8 +47,8 @@ const getCategories = async (req, res) => {
 const createCategory = async (req, res) => {
   const { title, slug, img } = req.body;
 
-  if (!title || typeof title !== 'string' || !title.trim()) {
-    return res.status(400).json({ message: 'Category title is required' });
+  if (!title || typeof title !== 'string' || !title.trim() || title.trim().length > 50) {
+    return res.status(400).json({ message: 'Category title is required (max 50 characters)' });
   }
 
   const categorySlug = (slug || title)

@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { authFetch } from "@/utils/api";
 import useSWR from "swr";
 import Link from "next/link";
 import { useSession } from "@/context/AuthContext";
@@ -8,7 +10,7 @@ import { useRouter } from "next/navigation";
 import styles from "./notifications.module.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-const fetcher = (url) => fetch(url).then((res) => (res.ok ? res.json() : null));
+const fetcher = (url) => authFetch(url).then((res) => (res.ok ? res.json() : null));
 
 const formatRelativeTime = (dateStr) => {
   if (!dateStr) return "Recently";
@@ -60,7 +62,7 @@ export default function NotificationsPage() {
     if (!userEmail) return;
     setLoadingAction(true);
     try {
-      await fetch(`${API_URL}/api/notifications/read`, {
+      await authFetch(`${API_URL}/api/notifications/read`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: userEmail }),
@@ -77,7 +79,7 @@ export default function NotificationsPage() {
     if (!userEmail || !confirm("Are you sure you want to clear all notifications?")) return;
     setLoadingAction(true);
     try {
-      await fetch(`${API_URL}/api/notifications/clear`, {
+      await authFetch(`${API_URL}/api/notifications/clear`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: userEmail }),
@@ -93,7 +95,7 @@ export default function NotificationsPage() {
   const handleSingleRead = async (id) => {
     if (!userEmail) return;
     try {
-      await fetch(`${API_URL}/api/notifications/read`, {
+      await authFetch(`${API_URL}/api/notifications/read`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: userEmail, notificationId: id }),

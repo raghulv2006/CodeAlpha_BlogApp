@@ -1,5 +1,18 @@
 const prisma = require('../utils/prisma');
 
+// TTL-aware view throttle — tracks ip+slug with a timestamp
+// Prevents the same IP from inflating views more than once per hour per post
+const viewedPosts = new Map();
+const VIEW_THROTTLE_MS = 60 * 60 * 1000; // 1 hour
+
+// Prune expired entries every 30 minutes to prevent unbounded memory growth
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, ts] of viewedPosts.entries()) {
+    if (now - ts > VIEW_THROTTLE_MS) viewedPosts.delete(key);
+  }
+}, 30 * 60 * 1000);
+
 // Helper to parse tags array or extract hashtags from text
 const extractAndUpsertTags = async (tagsArray = [], descText = '') => {
   const extractedHashtags = (descText.match(/#[\w-]+/g) || []).map((t) =>
@@ -30,7 +43,7 @@ const extractAndUpsertTags = async (tagsArray = [], descText = '') => {
 };
 
 const getPosts = async (req, res) => {
-  const page = parseInt(req.query.page || '1');
+  const page = Math.min(Math.max(parseInt(req.query.page || '1'), 1), 1000);
   const cat = req.query.cat;
   const tag = req.query.tag;
   const userEmail = req.query.userEmail;
@@ -73,7 +86,6 @@ const getPosts = async (req, res) => {
           mediaType: true,
           views: true,
           catSlug: true,
-          userEmail: true,
           user: {
             select: {
               name: true,
@@ -147,17 +159,37 @@ const getPostBySlug = async (req, res) => {
   const { userEmail } = req.query;
 
   try {
-    const post = await prisma.post.update({
-      where: { slug },
-      data: { views: { increment: 1 } },
-      include: {
-        user: true,
-        cat: true,
-        tags: true,
-        votes: true,
-        comments: { include: { user: true }, orderBy: { createdAt: 'desc' } },
-      },
-    });
+    const viewKey = `${req.ip}-${slug}`;
+    let post;
+
+    const lastViewed = viewedPosts.get(viewKey);
+    const shouldCountView = !lastViewed || (Date.now() - lastViewed > VIEW_THROTTLE_MS);
+
+    if (shouldCountView) {
+      viewedPosts.set(viewKey, Date.now());
+      post = await prisma.post.update({
+        where: { slug },
+        data: { views: { increment: 1 } },
+        include: {
+          user: true,
+          cat: true,
+          tags: true,
+          votes: true,
+          comments: { include: { user: true }, orderBy: { createdAt: 'desc' } },
+        },
+      });
+    } else {
+      post = await prisma.post.findUnique({
+        where: { slug },
+        include: {
+          user: true,
+          cat: true,
+          tags: true,
+          votes: true,
+          comments: { include: { user: true }, orderBy: { createdAt: 'desc' } },
+        },
+      });
+    }
 
     const netVotes = post.votes.reduce((acc, v) => acc + v.value, 0);
     let currentUserVote = 0;
@@ -178,25 +210,26 @@ const getPostBySlug = async (req, res) => {
 };
 
 const createPost = async (req, res) => {
-  const { title, desc, img, video, mediaType, slug, catSlug, userEmail, userImage, tags } = req.body;
+  const { title, desc, img, video, mediaType, slug, catSlug, tags } = req.body;
+  const user = req.user; // Set by auth middleware
 
   if (!title || typeof title !== 'string' || !title.trim()) {
     return res.status(400).json({ message: 'Title is required' });
   }
 
-  if (!userEmail) {
-    return res.status(401).json({ message: 'User email required!' });
+  if (title.length > 300) {
+    return res.status(400).json({ message: 'Title exceeds 300 characters' });
+  }
+
+  if (desc && desc.length > 100000) {
+    return res.status(400).json({ message: 'Content exceeds maximum allowed length' });
+  }
+
+  if (tags && tags.length > 20) {
+    return res.status(400).json({ message: 'Maximum 20 tags allowed' });
   }
 
   try {
-    const user = await prisma.user.upsert({
-      where: { email: userEmail },
-      update: {
-        ...(userImage && { image: userImage }),
-      },
-      create: { email: userEmail, name: userEmail.split('@')[0], image: userImage || null },
-    });
-
     const categorySlug = catSlug || 'style';
     await prisma.category.upsert({
       where: { slug: categorySlug },
@@ -239,10 +272,19 @@ const createPost = async (req, res) => {
 
 const updatePost = async (req, res) => {
   const { slug } = req.params;
-  const { title, desc, img, video, mediaType, catSlug, userEmail, tags } = req.body;
+  const { title, desc, img, video, mediaType, catSlug, tags } = req.body;
+  const user = req.user;
 
-  if (!userEmail) {
-    return res.status(401).json({ message: 'User email required to edit post' });
+  if (title && title.length > 300) {
+    return res.status(400).json({ message: 'Title exceeds 300 characters' });
+  }
+
+  if (desc && desc.length > 100000) {
+    return res.status(400).json({ message: 'Content exceeds maximum allowed length' });
+  }
+
+  if (tags && tags.length > 20) {
+    return res.status(400).json({ message: 'Maximum 20 tags allowed' });
   }
 
   try {
@@ -254,7 +296,7 @@ const updatePost = async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    if (existingPost.userEmail.toLowerCase() !== userEmail.toLowerCase()) {
+    if (existingPost.userEmail.toLowerCase() !== user.email.toLowerCase()) {
       return res.status(403).json({ message: 'Unauthorized to edit this post' });
     }
 
@@ -298,18 +340,10 @@ const updatePost = async (req, res) => {
 
 const votePost = async (req, res) => {
   const { slug } = req.params;
-  const { userEmail, value } = req.body; // value: 1 (up), -1 (down), 0 (remove)
-
-  if (!userEmail) {
-    return res.status(401).json({ message: 'User email required for voting' });
-  }
+  const { value } = req.body; // value: 1 (up), -1 (down), 0 (remove)
+  const user = req.user;
 
   try {
-    const user = await prisma.user.upsert({
-      where: { email: userEmail },
-      update: {},
-      create: { email: userEmail, name: userEmail.split('@')[0] },
-    });
 
     const post = await prisma.post.findUnique({
       where: { slug },
@@ -379,11 +413,7 @@ const votePost = async (req, res) => {
 // Delete Post with User Authorization Check
 const deletePost = async (req, res) => {
   const { slug } = req.params;
-  const { userEmail } = req.body;
-
-  if (!userEmail) {
-    return res.status(401).json({ message: "User email is required for authorization" });
-  }
+  const user = req.user;
 
   try {
     const post = await prisma.post.findUnique({
@@ -396,7 +426,7 @@ const deletePost = async (req, res) => {
     }
 
     // Access Control Guard: Only post author can delete
-    if (post.userEmail.toLowerCase() !== userEmail.toLowerCase()) {
+    if (post.userEmail.toLowerCase() !== user.email.toLowerCase()) {
       return res.status(403).json({ message: "Forbidden: You are not authorized to delete this post" });
     }
 
