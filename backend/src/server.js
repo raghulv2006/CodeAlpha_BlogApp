@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -49,6 +50,9 @@ app.use(
 // Body Parsing Middleware with size limits to prevent Denial of Service (DoS) payloads
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
+
+// Serve static uploaded files
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Health Check
 app.get('/health', (req, res) => {

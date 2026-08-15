@@ -32,6 +32,7 @@ const Comments = ({ postSlug }) => {
 
   const [desc, setDesc] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [justSubmitted, setJustSubmitted] = useState(false);
 
   const handleSubmit = async () => {
     if (!desc.trim()) return;
@@ -46,7 +47,9 @@ const Comments = ({ postSlug }) => {
 
       if (res.ok) {
         setDesc("");
+        setJustSubmitted(true);
         mutate();
+        setTimeout(() => setJustSubmitted(false), 2000);
       }
     } catch (err) {
       console.error("Comment submit error:", err);
@@ -69,13 +72,15 @@ const Comments = ({ postSlug }) => {
             rows={3}
           />
           <div className={styles.buttonRow}>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.95 }}
               className={styles.button}
               onClick={handleSubmit}
               disabled={submitting || !desc.trim()}
             >
-              {submitting ? "Posting..." : "Comment"}
-            </button>
+              {submitting ? "Posting..." : justSubmitted ? "Posted ✓" : "Comment"}
+            </motion.button>
           </div>
         </div>
       ) : (
@@ -103,7 +108,12 @@ const Comments = ({ postSlug }) => {
                 <div className={styles.userHeader}>
                   {item?.user?.image ? (
                     <div className={styles.avatarWrapper}>
-                      <Image src={item.user.image} alt={item.user.name || "User"} fill className={styles.avatar} />
+                      <img
+                        src={item.user.image}
+                        alt={item.user.name || "User"}
+                        className={styles.avatar}
+                        onError={(e) => { e.target.style.display = "none"; }}
+                      />
                     </div>
                   ) : (
                     <div className={styles.defaultAvatar}>
@@ -112,7 +122,7 @@ const Comments = ({ postSlug }) => {
                   )}
                   <div className={styles.userInfo}>
                     <span className={styles.username}>
-                      u/{item?.user?.name?.replace(/\s+/g, "").toLowerCase() || "user"}
+                      @{item?.user?.name?.replace(/\s+/g, "_").toLowerCase() || item?.userEmail?.split("@")[0] || "user"}
                     </span>
                     <span className={styles.date}>
                       {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "Just now"}

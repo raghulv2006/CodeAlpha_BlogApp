@@ -17,20 +17,52 @@ function ProfileContent() {
   // Active user target email (query param or currently logged-in user email)
   const targetEmail = searchParams.get("email") || session?.user?.email;
 
-  const [activeTab, setActiveTab] = useState("posts"); // 'posts', 'about', 'followers', 'following'
+  const [activeTab, setActiveTab] = useState("posts"); // 'posts', 'about', 'bookmarks', 'followers', 'following'
   const [profileData, setProfileData] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [bookmarks, setBookmarks] = useState([]);
+  const [loadingBookmarks, setLoadingBookmarks] = useState(false);
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowHovered, setIsFollowHovered] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
 
   // Edit Modal State
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
+  const [editImage, setEditImage] = useState("");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [updating, setUpdating] = useState(false);
+
+  const avatarInputRef = React.useRef(null);
+
+  const handleAvatarUpload = (file) => {
+    if (!file) return;
+    setUploadingAvatar(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    fetch(`${API_URL}/api/upload`, {
+      method: "POST",
+      body: formData,
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.url) {
+          setEditImage(data.url);
+        } else {
+          alert("Failed to upload avatar image.");
+        }
+      })
+      .catch((err) => {
+        console.error("Avatar upload error:", err);
+        alert("Error uploading avatar.");
+      })
+      .finally(() => setUploadingAvatar(false));
+  };
 
   const isOwnProfile =
     session?.user?.email && targetEmail === session?.user?.email;
@@ -45,10 +77,17 @@ function ProfileContent() {
     try {
       setLoading(true);
       const currentEmail = session?.user?.email || "";
+      const googlePhoto =
+        targetEmail === session?.user?.email && session?.user?.image
+          ? session.user.image
+          : "";
+
       const res = await fetch(
         `${API_URL}/api/users/profile?email=${encodeURIComponent(
           targetEmail
-        )}&currentUserEmail=${encodeURIComponent(currentEmail)}`
+        )}&currentUserEmail=${encodeURIComponent(currentEmail)}${
+          googlePhoto ? `&image=${encodeURIComponent(googlePhoto)}` : ""
+        }`
       );
 
       if (res.ok) {
@@ -64,7 +103,7 @@ function ProfileContent() {
     } finally {
       setLoading(false);
     }
-  }, [targetEmail, session?.user?.email]);
+  }, [targetEmail, session?.user?.email, session?.user?.image]);
 
   // Fetch User Posts
   const fetchPosts = React.useCallback(async () => {
@@ -114,10 +153,35 @@ function ProfileContent() {
     }
   }, [targetEmail]);
 
+  // Fetch Bookmarks
+  const fetchBookmarks = React.useCallback(async () => {
+    if (!targetEmail) return;
+    setLoadingBookmarks(true);
+    try {
+      const res = await fetch(
+        `${API_URL}/api/users/me/bookmarks?userEmail=${encodeURIComponent(targetEmail)}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setBookmarks(data.posts || []);
+      }
+    } catch (err) {
+      console.error("Error fetching bookmarks:", err);
+    } finally {
+      setLoadingBookmarks(false);
+    }
+  }, [targetEmail]);
+
   useEffect(() => {
     fetchProfile();
     fetchPosts();
   }, [fetchProfile, fetchPosts]);
+
+  useEffect(() => {
+    if (activeTab === "bookmarks") {
+      fetchBookmarks();
+    }
+  }, [activeTab, fetchBookmarks]);
 
   useEffect(() => {
     if (activeTab === "followers") fetchFollowersList();
@@ -164,6 +228,7 @@ function ProfileContent() {
           email: session.user.email,
           name: editName,
           bio: editBio,
+          image: editImage,
         }),
       });
 
@@ -240,10 +305,10 @@ function ProfileContent() {
         <div className={styles.headerCard}>
           <div className={styles.topRow}>
             <div className={styles.avatarWrapper}>
-              {user?.image ? (
+              {user?.image || (isOwnProfile && session?.user?.image) ? (
                 <img
-                  src={user.image}
-                  alt={user.name || "User"}
+                  src={user?.image || session?.user?.image}
+                  alt={user?.name || "Google Account Profile"}
                   className={styles.avatarImage}
                 />
               ) : (
@@ -257,7 +322,12 @@ function ProfileContent() {
               {isOwnProfile ? (
                 <button
                   className={styles.editBtn}
-                  onClick={() => setIsEditOpen(true)}
+                  onClick={() => {
+                    setEditName(profileData?.user?.name || "");
+                    setEditBio(profileData?.user?.bio || "");
+                    setEditImage(profileData?.user?.image || session?.user?.image || "");
+                    setIsEditOpen(true);
+                  }}
                 >
                   ✏️ Edit Profile
                 </button>
@@ -267,8 +337,14 @@ function ProfileContent() {
                     isFollowing ? styles.followingBtn : styles.followBtn
                   }
                   onClick={handleToggleFollow}
+                  onMouseEnter={() => setIsFollowHovered(true)}
+                  onMouseLeave={() => setIsFollowHovered(false)}
                 >
-                  {isFollowing ? "✓ Following" : "+ Follow"}
+                  {isFollowing
+                    ? isFollowHovered
+                      ? "✕ Unfollow"
+                      : "✓ Following"
+                    : "+ Follow"}
                 </button>
               )}
             </div>
@@ -276,7 +352,7 @@ function ProfileContent() {
 
           <div className={styles.userInfo}>
             <h1 className={styles.displayName}>{user?.name || user?.email}</h1>
-            <span className={styles.userHandle}>u/{username}</span>
+            <span className={styles.userHandle}>@{username}</span>
             <p className={styles.bioText}>
               {user?.bio ||
                 (isOwnProfile
@@ -352,6 +428,17 @@ function ProfileContent() {
             ℹ️ About
           </button>
 
+          {isOwnProfile && (
+            <button
+              className={`${styles.tabBtn} ${
+                activeTab === "bookmarks" ? styles.activeTab : ""
+              }`}
+              onClick={() => setActiveTab("bookmarks")}
+            >
+              🔖 Saved ({bookmarks.length})
+            </button>
+          )}
+
           <button
             className={`${styles.tabBtn} ${
               activeTab === "followers" ? styles.activeTab : ""
@@ -403,9 +490,30 @@ function ProfileContent() {
             </div>
           )}
 
+          {activeTab === "bookmarks" && isOwnProfile && (
+            <div className={styles.postsList}>
+              {loadingBookmarks ? (
+                <div className={styles.emptyState}>
+                  <div className={styles.emptyIcon}>⏳</div>
+                  <p>Loading saved bookmarks...</p>
+                </div>
+              ) : bookmarks && bookmarks.length > 0 ? (
+                bookmarks.map((item) => <Card item={item} key={item.id || item.slug} />)
+              ) : (
+                <div className={styles.emptyState}>
+                  <div className={styles.emptyIcon}>🔖</div>
+                  <p>No bookmarked posts saved yet.</p>
+                  <span style={{ fontSize: "0.85rem", color: "var(--softTextColor)" }}>
+                    Click the 🏷️ Bookmark button on any post media to save it here for quick access!
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === "about" && (
             <div className={styles.aboutBox}>
-              <h2 className={styles.aboutTitle}>About u/{username}</h2>
+              <h2 className={styles.aboutTitle}>About @{username}</h2>
               <div className={styles.aboutRow}>
                 <span className={styles.aboutLabel}>Display Name:</span>
                 <span className={styles.aboutValue}>
@@ -466,8 +574,8 @@ function ProfileContent() {
                         {fUser.name || fUser.email}
                       </span>
                       <span className={styles.userCardHandle}>
-                        u/
-                        {fUser.name?.replace(/\s+/g, "").toLowerCase() ||
+                        @
+                        {fUser.name?.replace(/\s+/g, "_").toLowerCase() ||
                           fUser.email.split("@")[0]}
                       </span>
                     </div>
@@ -507,8 +615,8 @@ function ProfileContent() {
                         {fUser.name || fUser.email}
                       </span>
                       <span className={styles.userCardHandle}>
-                        u/
-                        {fUser.name?.replace(/\s+/g, "").toLowerCase() ||
+                        @
+                        {fUser.name?.replace(/\s+/g, "_").toLowerCase() ||
                           fUser.email.split("@")[0]}
                       </span>
                     </div>
@@ -546,6 +654,59 @@ function ProfileContent() {
               </div>
 
               <form onSubmit={handleSaveProfile}>
+                <div className={styles.formGroup} style={{ marginBottom: 16 }}>
+                  <label className={styles.formLabel}>Profile Photo</label>
+                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <div style={{ position: "relative", width: 64, height: 64, borderRadius: "50%", overflow: "hidden", background: "#334155", border: "2px solid #38bdf8", flexShrink: 0 }}>
+                      {editImage ? (
+                        <img src={editImage} alt="Avatar Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : (
+                        <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 24 }}>
+                          {(editName || session?.user?.email || "U")[0].toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+                      <input
+                        type="file"
+                        ref={avatarInputRef}
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        onChange={(e) => e.target.files?.[0] && handleAvatarUpload(e.target.files[0])}
+                      />
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <button
+                          type="button"
+                          className={styles.cancelBtn}
+                          style={{ padding: "6px 14px", fontSize: "0.85rem" }}
+                          onClick={() => avatarInputRef.current?.click()}
+                          disabled={uploadingAvatar}
+                        >
+                          {uploadingAvatar ? "Uploading..." : "📷 Upload New Photo"}
+                        </button>
+                        {session?.user?.image && editImage !== session.user.image && (
+                          <button
+                            type="button"
+                            className={styles.cancelBtn}
+                            style={{ padding: "6px 14px", fontSize: "0.85rem", color: "#38bdf8", borderColor: "#38bdf8" }}
+                            onClick={() => setEditImage(session.user.image)}
+                          >
+                            Google Photo
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        type="url"
+                        placeholder="Or paste image URL (e.g. https://...)"
+                        value={editImage}
+                        onChange={(e) => setEditImage(e.target.value)}
+                        className={styles.formInput}
+                        style={{ fontSize: "0.85rem", padding: "8px 12px" }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>Display Name</label>
                   <input

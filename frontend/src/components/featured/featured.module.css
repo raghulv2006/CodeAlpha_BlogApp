@@ -2,6 +2,44 @@
   margin-bottom: 32px;
 }
 
+.dismissBtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: var(--softTextColor);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.dismissBtn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.dismissBtnText {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--softTextColor);
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dismissBtnText:hover {
+  border-color: var(--textColor);
+  color: var(--textColor);
+}
+
 .heroHeader {
   margin-bottom: 24px;
 }
@@ -31,12 +69,9 @@
 }
 
 .postCard {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
+  border-radius: 20px;
   display: flex;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .imgContainer {
@@ -84,8 +119,14 @@
 
 .postDesc {
   font-size: 14px;
-  color: var(--softTextColor);
+  color: var(--textColor);
   line-height: 1.6;
+}
+
+.btnRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .primaryBtn {

@@ -94,27 +94,30 @@
 }
 
 .followBtn {
-  background-color: var(--accent-green);
+  background-color: var(--accent-green, #22c55e);
   color: #ffffff;
-  border: none;
+  border: 1px solid var(--accent-green, #22c55e);
   padding: 10px 24px;
   border-radius: 9999px;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px var(--accent-green-glow);
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.3);
 }
 
 .followBtn:hover {
-  background-color: var(--accent-green-hover);
+  background-color: #16a34a;
+  border-color: #16a34a;
+  color: #ffffff;
   transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.45);
 }
 
 .followingBtn {
   background-color: transparent;
-  color: var(--textColor);
-  border: 1px solid var(--accent-green);
+  color: #22c55e;
+  border: 1px solid #22c55e;
   padding: 10px 24px;
   border-radius: 9999px;
   font-weight: 600;
@@ -124,9 +127,11 @@
 }
 
 .followingBtn:hover {
-  background-color: rgba(239, 68, 68, 0.1);
+  background-color: rgba(239, 68, 68, 0.15);
   border-color: #ef4444;
   color: #ef4444;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35);
+  transform: translateY(-1px);
 }
 
 .userInfo {

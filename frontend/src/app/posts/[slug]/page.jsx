@@ -1,7 +1,10 @@
-import Menu from "@/components/Menu/Menu";
 import styles from "./singlePage.module.css";
 import Image from "next/image";
+import Link from "next/link";
 import Comments from "@/components/comments/Comments";
+import SinglePostMedia from "@/components/singlePostMedia/SinglePostMedia";
+import EditArticleButton from "@/components/editArticleButton/EditArticleButton";
+import BookmarkArticleButton from "@/components/bookmarkArticleButton/BookmarkArticleButton";
 import sanitizeHtml from "sanitize-html";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -9,7 +12,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const getData = async (slug) => {
   try {
     const res = await fetch(`${API_URL}/api/posts/${slug}`, {
-      cache: "no-store",
+      next: { revalidate: 30 },
     });
 
     if (!res.ok) {
@@ -31,6 +34,9 @@ const SinglePage = async ({ params }) => {
       <div className={styles.notFoundContainer}>
         <h1>Article Not Found</h1>
         <p>The post you are looking for does not exist or has been removed.</p>
+        <Link href="/" style={{ color: "#38bdf8", textDecoration: "none", marginTop: 16, display: "inline-block" }}>
+          ← Return to Home
+        </Link>
       </div>
     );
   }
@@ -47,40 +53,53 @@ const SinglePage = async ({ params }) => {
     <div className={styles.container}>
       <div className={styles.headerSection}>
         <div className={styles.metaBadgeRow}>
-          <span className={styles.categoryBadge}>r/{data?.catSlug}</span>
+          <Link href={`/blog?cat=${data?.catSlug}`} className={styles.categoryBadge} style={{ textDecoration: "none" }}>
+            {data?.catSlug ? data.catSlug.charAt(0).toUpperCase() + data.catSlug.slice(1) : ""}
+          </Link>
           <span className={styles.viewBadge}>👁️ {data?.views || 1} views</span>
+          <span className={styles.viewBadge}>▲ {data?.netVotes || 0} votes</span>
+          <EditArticleButton slug={slug} userEmail={data?.userEmail} />
         </div>
         <h1 className={styles.title}>{data?.title}</h1>
 
         <div className={styles.authorRow}>
-          {data?.user?.image ? (
-            <div className={styles.avatarWrapper}>
-              <Image src={data.user.image} alt={data.user.name || "User"} fill className={styles.avatar} />
+          <Link href={`/profile?email=${encodeURIComponent(data?.userEmail || "")}`} style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12 }}>
+            {data?.user?.image ? (
+              <div className={styles.avatarWrapper}>
+                <img src={data.user.image} alt={data.user.name || "User"} className={styles.avatar} />
+              </div>
+            ) : (
+              <div className={styles.defaultAvatar}>
+                {(data?.user?.name || data?.userEmail || "U")[0].toUpperCase()}
+              </div>
+            )}
+            <div className={styles.authorDetails}>
+              <span className={styles.username}>
+                @{data?.user?.name?.replace(/\s+/g, "_").toLowerCase() || data?.userEmail?.split("@")[0] || "user"}
+              </span>
+              <span className={styles.date}>{formattedDate}</span>
             </div>
-          ) : (
-            <div className={styles.defaultAvatar}>
-              {(data?.user?.name || "U")[0].toUpperCase()}
-            </div>
-          )}
-          <div className={styles.authorDetails}>
-            <span className={styles.username}>
-              u/{data?.user?.name?.replace(/\s+/g, "").toLowerCase() || "anonymous"}
-            </span>
-            <span className={styles.date}>{formattedDate}</span>
-          </div>
+          </Link>
         </div>
+
+        {/* Tags */}
+        {data?.tags && data.tags.length > 0 && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 }}>
+            {data.tags.map((t) => (
+              <Link
+                key={t.id || t.name}
+                href={`/blog?tag=${t.name}`}
+                style={{ textDecoration: "none", fontSize: "0.85rem", color: "#38bdf8", background: "rgba(56, 189, 248, 0.12)", padding: "4px 12px", borderRadius: 16 }}
+              >
+                #{t.name}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Main Media Attachment (Image or Video) */}
-      {data?.video ? (
-        <div className={styles.mediaContainer}>
-          <video src={data.video} controls className={styles.videoPlayer} autoPlay={false} />
-        </div>
-      ) : data?.img ? (
-        <div className={styles.mediaContainer}>
-          <Image src={data.img} alt={data.title} fill className={styles.heroImage} priority />
-        </div>
-      ) : null}
+      {/* Main Media Attachment (Image or Video) with Shared Morph Transition */}
+      <SinglePostMedia slug={slug} video={data?.video} img={data?.img} title={data?.title} />
 
       <div className={styles.contentLayout}>
         <main className={styles.mainArticle}>
@@ -100,11 +119,13 @@ const SinglePage = async ({ params }) => {
             }}
           />
 
+          {/* Bookmark Option Banner above Discussion and Comments */}
+          <BookmarkArticleButton slug={slug} initialBookmarked={data?.isBookmarked} />
+
           <section className={styles.commentsSection}>
             <Comments postSlug={slug} />
           </section>
         </main>
-        <Menu />
       </div>
     </div>
   );

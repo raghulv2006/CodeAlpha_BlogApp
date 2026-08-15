@@ -2,7 +2,7 @@ const prisma = require('../utils/prisma');
 
 // Get Profile details for a specific user email
 const getUserProfile = async (req, res) => {
-  const { email, currentUserEmail } = req.query;
+  const { email, currentUserEmail, image } = req.query;
 
   if (!email) {
     return res.status(400).json({ message: 'User email parameter is required' });
@@ -17,6 +17,7 @@ const getUserProfile = async (req, res) => {
         email: true,
         image: true,
         bio: true,
+        hasSeenWelcome: true,
         createdAt: true,
       },
     });
@@ -25,11 +26,28 @@ const getUserProfile = async (req, res) => {
       // Create user if not exists yet
       user = await prisma.user.upsert({
         where: { email },
-        update: {},
+        update: {
+          ...(image && { image }),
+        },
         create: {
           email,
           name: email.split('@')[0],
+          image: image || null,
         },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          bio: true,
+          createdAt: true,
+        },
+      });
+    } else if (image && (!user.image || user.image !== image)) {
+      // Auto-sync image if provided and changed
+      user = await prisma.user.update({
+        where: { email },
+        data: { image },
         select: {
           id: true,
           name: true,
@@ -109,7 +127,7 @@ const updateUserProfile = async (req, res) => {
       update: {
         ...(name && { name }),
         ...(bio !== undefined && { bio }),
-        ...(image && { image }),
+        ...(image !== undefined && { image }),
       },
       create: {
         email,
@@ -282,10 +300,33 @@ const getFollowing = async (req, res) => {
   }
 };
 
+// Dismiss Welcome Banner
+const dismissWelcome = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email required' });
+  }
+
+  try {
+    await prisma.user.upsert({
+      where: { email },
+      update: { hasSeenWelcome: true },
+      create: { email, name: email.split('@')[0], hasSeenWelcome: true },
+    });
+
+    return res.status(200).json({ success: true, hasSeenWelcome: true });
+  } catch (err) {
+    console.error('Error dismissing welcome:', err);
+    return res.status(500).json({ message: 'Failed to dismiss welcome' });
+  }
+};
+
 module.exports = {
   getUserProfile,
   updateUserProfile,
   toggleFollow,
   getFollowers,
   getFollowing,
+  dismissWelcome,
 };

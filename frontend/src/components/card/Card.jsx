@@ -3,21 +3,103 @@
 import Image from "next/image";
 import styles from "./card.module.css";
 import Link from "next/link";
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import sanitizeHtml from "sanitize-html";
+import { useSession } from "@/context/AuthContext";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 const Card = ({ item }) => {
-  const [votes, setVotes] = useState(() => Math.floor(Math.random() * 40) + (item.views || 5));
-  const [userVote, setUserVote] = useState(0); // 1 = up, -1 = down
+  const router = useRouter();
+  const { data: session } = useSession();
+  const [votes, setVotes] = useState(item?.netVotes ?? (item?.views ? Math.min(item.views, 12) : 0));
+  const [userVote, setUserVote] = useState(item?.currentUserVote ?? 0); // 1 = up, -1 = down
+  const [isBookmarked, setIsBookmarked] = useState(item?.isBookmarked ?? false);
+  const [imgError, setImgError] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
-  const handleVote = (direction) => {
-    if (userVote === direction) {
-      setUserVote(0);
-      setVotes(votes - direction);
-    } else {
-      setVotes(votes - userVote + direction);
-      setUserVote(direction);
+  useEffect(() => {
+    if (item?.netVotes !== undefined) setVotes(item.netVotes);
+    if (item?.currentUserVote !== undefined) setUserVote(item.currentUserVote);
+    if (item?.isBookmarked !== undefined) setIsBookmarked(item.isBookmarked);
+  }, [item?.netVotes, item?.currentUserVote, item?.isBookmarked]);
+
+  const handleCardClick = (e) => {
+    // If user clicked inside an interactive button, link or video player, do not intercept
+    if (
+      e.target.closest("button") ||
+      e.target.closest("a") ||
+      e.target.closest("input") ||
+      e.target.closest("video")
+    ) {
+      return;
+    }
+    if (item?.slug) {
+      router.push(`/posts/${item.slug}`);
+    }
+  };
+
+  const handleVote = async (direction) => {
+    if (!session?.user?.email) {
+      alert("Please log in to vote on posts!");
+      return;
+    }
+
+    const newDirection = userVote === direction ? 0 : direction;
+    const voteDiff = newDirection - userVote;
+
+    // Optimistic UI update
+    setUserVote(newDirection);
+    setVotes((prev) => prev + voteDiff);
+
+    try {
+      const res = await fetch(`${API_URL}/api/posts/${item.slug}/vote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userEmail: session.user.email,
+          value: newDirection,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setVotes(data.netVotes);
+        setUserVote(data.currentUserVote);
+      }
+    } catch (err) {
+      console.error("Failed to vote:", err);
+    }
+  };
+
+  const handleToggleBookmark = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!session?.user?.email) {
+      alert("Please log in to bookmark posts!");
+      return;
+    }
+
+    const newBookmarked = !isBookmarked;
+    setIsBookmarked(newBookmarked);
+
+    try {
+      const res = await fetch(`${API_URL}/api/posts/${item.slug}/bookmark`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userEmail: session.user.email }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setIsBookmarked(data.isBookmarked);
+      }
+    } catch (err) {
+      console.error("Failed to toggle bookmark:", err);
     }
   };
 
@@ -26,31 +108,47 @@ const Card = ({ item }) => {
     day: "numeric",
   }) : "Recent";
 
+  const isAuthor =
+    session?.user?.email &&
+    item?.userEmail &&
+    session.user.email.toLowerCase() === item.userEmail.toLowerCase();
+
   return (
     <motion.div
       className={styles.container}
+      data-post-card="true"
+      onClick={handleCardClick}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-      whileHover={{ y: -2 }}
+      transition={{ duration: 0.2 }}
+      whileHover={{ y: -3, scale: 1.005 }}
     >
       {/* Reddit-style Upvote Sidebar */}
       <div className={styles.voteSidebar}>
-        <button
+        <motion.button
+          whileTap={{ scale: 0.8 }}
           className={`${styles.voteBtn} ${userVote === 1 ? styles.upvoted : ""}`}
           onClick={() => handleVote(1)}
+          data-vote-up="true"
           title="Upvote"
         >
           <svg className={styles.arrowIcon} viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 4l-8 8h5v8h6v-8h5z" />
           </svg>
-        </button>
+        </motion.button>
 
-        <span className={`${styles.voteCount} ${userVote === 1 ? styles.upvotedText : userVote === -1 ? styles.downvotedText : ""}`}>
+        <motion.span
+          key={votes}
+          initial={{ scale: 1.25, opacity: 0.7 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          className={`${styles.voteCount} ${userVote === 1 ? styles.upvotedText : userVote === -1 ? styles.downvotedText : ""}`}
+        >
           {votes}
-        </span>
+        </motion.span>
 
-        <button
+        <motion.button
+          whileTap={{ scale: 0.8 }}
           className={`${styles.voteBtn} ${userVote === -1 ? styles.downvoted : ""}`}
           onClick={() => handleVote(-1)}
           title="Downvote"
@@ -58,7 +156,7 @@ const Card = ({ item }) => {
           <svg className={styles.arrowIcon} viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 20l8-8h-5V4h-6v8H4z" />
           </svg>
-        </button>
+        </motion.button>
       </div>
 
       {/* Post Main Content */}
@@ -70,20 +168,32 @@ const Card = ({ item }) => {
             className={styles.metaHeader}
             style={{ textDecoration: "none" }}
           >
-            {item?.user?.image ? (
-              <img src={item.user.image} alt={item.user.name || "Author"} className={styles.authorAvatar} />
+            {item?.user?.image && !avatarError ? (
+              <img
+                src={item.user.image}
+                alt={item.user.name || "Author"}
+                className={styles.authorAvatar}
+                onError={() => setAvatarError(true)}
+              />
             ) : (
               <div className={styles.defaultAvatar}>
                 {(item?.user?.name || item?.userEmail || "U")[0].toUpperCase()}
               </div>
             )}
             <span className={styles.authorName}>
-              u/{item?.user?.name?.replace(/\s+/g, "").toLowerCase() || item?.userEmail?.split("@")[0] || "anonymous"}
+              @{item?.user?.name?.replace(/\s+/g, "_").toLowerCase() || item?.userEmail?.split("@")[0] || "user"}
             </span>
           </Link>
           <span className={styles.dotSeparator}>•</span>
           <span className={styles.postDate}>{formattedDate}</span>
-          <span className={styles.categoryPill}>{item?.catSlug}</span>
+          <Link href={`/blog?cat=${item?.catSlug}`} className={styles.categoryPill}>
+            {item?.catSlug ? item.catSlug.charAt(0).toUpperCase() + item.catSlug.slice(1) : ""}
+          </Link>
+          {isAuthor && (
+            <Link href={`/posts/${item?.slug}/edit`} className={styles.editPill} style={{ marginLeft: "auto", textDecoration: "none", fontSize: "0.75rem", opacity: 0.8 }}>
+              ✏️ Edit
+            </Link>
+          )}
         </div>
 
         {/* Post Title */}
@@ -91,26 +201,87 @@ const Card = ({ item }) => {
           <h2 className={styles.title}>{item?.title}</h2>
         </Link>
 
-        {/* Media Renderer (Image or Video) */}
+        {/* Media Renderer with Image Hover Overlay for Bookmarking */}
         {item?.video ? (
-          <div className={styles.mediaWrapper}>
+          <motion.div className={styles.mediaWrapper} layoutId={`post-media-${item.slug}`}>
             <video src={item.video} controls className={styles.videoPlayer} preload="metadata" />
-          </div>
-        ) : item?.img ? (
-          <div className={styles.mediaWrapper}>
-            <img src={item.img} alt={item.title} className={styles.postImage} />
-          </div>
+            <div className={styles.mediaHoverOverlay}>
+              <Link href={`/posts/${item?.slug}`} className={styles.mediaHoverLink}>
+                <div className={styles.mediaHoverMetrics}>
+                  <span>▲ {votes}</span>
+                  <span>💬 {item?.comments?.length || 0}</span>
+                </div>
+              </Link>
+              <button
+                type="button"
+                onClick={handleToggleBookmark}
+                className={`${styles.bookmarkBtn} ${isBookmarked ? styles.bookmarkedActive : ""}`}
+              >
+                {isBookmarked ? "🔖 Bookmarked" : "🏷️ Bookmark"}
+              </button>
+            </div>
+          </motion.div>
+        ) : item?.img && !imgError ? (
+          <motion.div className={styles.mediaWrapper} layoutId={`post-media-${item.slug}`}>
+            <Link href={`/posts/${item?.slug}`} style={{ textDecoration: "none", display: "block", width: "100%", height: "100%" }}>
+              <img
+                src={item.img}
+                alt={item.title}
+                className={styles.postImage}
+                onError={() => setImgError(true)}
+              />
+            </Link>
+            <div className={styles.mediaHoverOverlay}>
+              <Link href={`/posts/${item?.slug}`} className={styles.mediaHoverLink}>
+                <div className={styles.mediaHoverMetrics}>
+                  <span>▲ {votes}</span>
+                  <span>💬 {item?.comments?.length || 0}</span>
+                </div>
+              </Link>
+              <button
+                type="button"
+                onClick={handleToggleBookmark}
+                className={`${styles.bookmarkBtn} ${isBookmarked ? styles.bookmarkedActive : ""}`}
+              >
+                {isBookmarked ? "🔖 Bookmarked" : "🏷️ Bookmark"}
+              </button>
+            </div>
+          </motion.div>
         ) : null}
 
         {/* Snippet Description */}
-        <div
-          className={styles.descSnippet}
-          dangerouslySetInnerHTML={{
-            __html: sanitizeHtml(
-              item?.desc ? item.desc.substring(0, 160) + (item.desc.length > 160 ? "..." : "") : ""
-            ),
-          }}
-        />
+        <Link href={`/posts/${item?.slug}`} style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}>
+          <div
+            className={styles.descSnippet}
+            dangerouslySetInnerHTML={{
+              __html: sanitizeHtml(
+                item?.desc ? item.desc.substring(0, 160) + (item.desc.length > 160 ? "..." : "") : ""
+              ),
+            }}
+          />
+        </Link>
+
+        {/* Tags / Hashtags */}
+        {item?.tags && item.tags.length > 0 && (
+          <div className={styles.tagChipsRow} style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "8px 0" }}>
+            {item.tags.map((t, idx) => (
+              <motion.div
+                key={t.id || t.name}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.03 }}
+              >
+                <Link
+                  href={`/blog?tag=${t.name}`}
+                  className="glass-lite"
+                  style={{ textDecoration: "none", fontSize: "0.75rem", color: "#38bdf8", padding: "3px 10px", borderRadius: 12, display: "inline-block" }}
+                >
+                  #{t.name}
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         {/* Footer Metrics & Actions */}
         <div className={styles.cardFooter}>

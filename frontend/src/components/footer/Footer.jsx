@@ -26,10 +26,10 @@ const Footer = () => {
         </div>
         <div className={styles.list}>
           <span className={styles.listTitle}>Categories</span>
-          <Link href="/blog?cat=coding">r/coding</Link>
-          <Link href="/blog?cat=style">r/style</Link>
-          <Link href="/blog?cat=food">r/food</Link>
-          <Link href="/blog?cat=travel">r/travel</Link>
+          <Link href="/blog?cat=coding">Coding</Link>
+          <Link href="/blog?cat=style">Style</Link>
+          <Link href="/blog?cat=food">Food</Link>
+          <Link href="/blog?cat=travel">Travel</Link>
         </div>
         <div className={styles.list}>
           <span className={styles.listTitle}>Social</span>

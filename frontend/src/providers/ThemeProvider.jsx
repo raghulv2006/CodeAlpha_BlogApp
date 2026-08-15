@@ -11,9 +11,11 @@ const ThemeProvider = ({ children }) => {
     setMounted(true);
   }, []);
 
-  if (mounted) {
-    return <div className={theme}>{children}</div>;
+  if (!mounted) {
+    return <div className="light">{children}</div>;
   }
+
+  return <div className={theme}>{children}</div>;
 };
 
 export default ThemeProvider;

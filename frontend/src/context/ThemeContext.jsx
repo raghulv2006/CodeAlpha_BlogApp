@@ -7,9 +7,9 @@ export const ThemeContext = createContext();
 const getFromLocalStorage = () => {
   if (typeof window !== "undefined") {
     const value = localStorage.getItem("theme");
-    return value || "dark";
+    return value || "light";
   }
-  return "dark";
+  return "light";
 };
 
 export const ThemeContextProvider = ({ children }) => {
@@ -18,11 +18,14 @@ export const ThemeContextProvider = ({ children }) => {
   });
 
   const toggle = () => {
-    setTheme(theme === "light" ? "dark" : "light");
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
   };
 
   useEffect(() => {
-    localStorage.setItem("theme", theme);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("theme", theme);
+      document.documentElement.setAttribute("data-theme", theme);
+    }
   }, [theme]);
 
   return (

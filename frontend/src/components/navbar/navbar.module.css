@@ -3,14 +3,20 @@
   align-items: center;
   justify-content: space-between;
   height: 64px;
-  border-bottom: 1px solid var(--border-color);
-  background-color: var(--bg-secondary);
   position: sticky;
   top: 0;
   z-index: 100;
-  padding: 0 16px;
+  padding: 0 20px;
   margin-bottom: 24px;
-  border-radius: 0 0 12px 12px;
+  border-radius: 0 0 16px 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.scrolled {
+  background: var(--glass-bg-scrolled) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
 .leftSection {
@@ -58,26 +64,77 @@
 .searchIcon {
   position: absolute;
   left: 12px;
-  width: 18px;
-  height: 18px;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  max-width: 18px !important;
+  max-height: 18px !important;
   color: var(--softTextColor);
+  z-index: 2;
+  pointer-events: none;
+  flex-shrink: 0;
 }
 
 .searchInput {
   width: 100%;
-  background-color: var(--bg-card);
+  background-color: var(--softBg);
   border: 1px solid var(--border-color);
   border-radius: 20px;
   padding: 8px 16px 8px 38px;
   color: var(--textColor);
   font-size: 14px;
   outline: none;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
 }
 
 .searchInput:focus, .searchInput:hover {
   border-color: var(--accent-green);
-  box-shadow: 0 0 8px var(--accent-green-glow);
+  box-shadow: 0 0 12px var(--accent-green-glow);
+  background-color: var(--softBg);
+}
+
+.searchResults {
+  position: absolute;
+  top: 48px;
+  left: 0;
+  right: 0;
+  border-radius: 16px;
+  padding: 12px;
+  z-index: 110;
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.dropdownHeader {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--softTextColor);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  padding: 0 8px;
+}
+
+.dropdownList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dropdownItem {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: var(--textColor);
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.dropdownItem:hover {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
 }
 
 .links {

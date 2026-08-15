@@ -12,7 +12,7 @@ const Menu = () => {
   return (
     <aside className={styles.container}>
       <div className={styles.stickyWrapper}>
-        <div className={styles.sidebarHeader}>
+        <div className={`${styles.sidebarHeader} glass`}>
           <div className={styles.headerTitleGroup}>
             <span className={styles.communityIcon}>🌐</span>
             <h2 className={styles.mainTitle}>BotBlogs Hub</h2>
@@ -35,24 +35,24 @@ const Menu = () => {
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.25 }}
             >
-              <div className={styles.sectionCard}>
+              <div className={`${styles.sectionCard} glass`}>
                 <h3 className={styles.sectionTitle}>🔥 Trending Discussions</h3>
                 <MenuPosts withImage={false} />
               </div>
 
-              <div className={styles.sectionCard}>
+              <div className={`${styles.sectionCard} glass`}>
                 <h3 className={styles.sectionTitle}>🏷️ Popular Communities</h3>
                 <MenuCategories />
               </div>
 
-              <div className={styles.sectionCard}>
+              <div className={`${styles.sectionCard} glass`}>
                 <h3 className={styles.sectionTitle}>⭐ Editor&apos;s Choice</h3>
                 <MenuPosts withImage={true} />
               </div>
 
-              <div className={styles.communityInfoCard}>
+              <div className={`${styles.communityInfoCard} glass`}>
                 <h4 className={styles.infoTitle}>About BotBlogs</h4>
-                <p className={styles.infoDesc}>
+                <p className={`${styles.infoDesc} text-scrim`}>
                   Welcome to BotBlogs — a developer-focused, community-driven blogging platform. Share stories, explore technology, and engage in discussions.
                 </p>
               </div>

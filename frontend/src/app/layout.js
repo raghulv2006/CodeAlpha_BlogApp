@@ -6,6 +6,7 @@ import { ThemeContextProvider } from "@/context/ThemeContext";
 import ThemeProvider from "@/providers/ThemeProvider";
 import AuthProvider from "@/providers/AuthProvider";
 import PageTransition from "@/components/animation/PageTransition";
+import AppShell from "@/components/appShell/AppShell";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,13 +22,11 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <ThemeContextProvider>
             <ThemeProvider>
-              <div className="container">
-                <div className="wrapper">
-                  <Navbar />
-                  <PageTransition>{children}</PageTransition>
-                  <Footer />
-                </div>
-              </div>
+              <AppShell>
+                <Navbar />
+                <PageTransition>{children}</PageTransition>
+                <Footer />
+              </AppShell>
             </ThemeProvider>
           </ThemeContextProvider>
         </AuthProvider>

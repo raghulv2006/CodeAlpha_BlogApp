@@ -24,29 +24,43 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  background: var(--bg-card);
+  padding: 4px;
+  border-radius: 24px;
+  border: 1px solid var(--border-color);
 }
 
 .sortBadge {
   font-size: 13px;
   font-weight: 600;
   color: var(--softTextColor);
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
+  background: transparent;
+  border: none;
   padding: 6px 14px;
   border-radius: 20px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
+  position: relative;
 }
 
 .sortBadge:hover {
-  border-color: var(--accent-green);
   color: var(--textColor);
 }
 
 .activeSort {
-  background-color: var(--accent-green-glow);
-  color: var(--accent-green);
-  border-color: var(--accent-green);
+  color: var(--accent-green) !important;
+}
+
+.activePillBg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--accent-green-glow);
+  border: 1px solid var(--accent-green);
+  border-radius: 20px;
+  z-index: 0;
 }
 
 .posts {
