@@ -1,16 +1,25 @@
 const prisma = require('../utils/prisma');
 
-// Get Profile details for a specific user email (Read-only, secure)
+// Get Profile details for a specific user email or ID (Read-only, secure)
 const getUserProfile = async (req, res) => {
-  const { email, currentUserEmail } = req.query;
+  const { email, id, currentUserEmail } = req.query;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if (!email || typeof email !== 'string') {
-    return res.status(400).json({ message: 'User email parameter is required' });
+  if (!email && !id) {
+    return res.status(400).json({ message: 'Valid user email or id parameter is required' });
+  }
+
+  if (email && (typeof email !== 'string' || !emailRegex.test(email) || email.length > 254)) {
+    return res.status(400).json({ message: 'Valid user email parameter is required' });
+  }
+
+  if (id && (typeof id !== 'string' || id.length > 100)) {
+    return res.status(400).json({ message: 'Valid user id parameter is required' });
   }
 
   try {
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
+      where: email ? { email: email.toLowerCase() } : { id },
       select: {
         id: true,
         name: true,
@@ -26,13 +35,15 @@ const getUserProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    const targetUserEmail = user.email;
+
     // Counts & Stats
     const postCount = await prisma.post.count({
-      where: { userEmail: email },
+      where: { userEmail: targetUserEmail },
     });
 
     const viewsAggregate = await prisma.post.aggregate({
-      where: { userEmail: email },
+      where: { userEmail: targetUserEmail },
       _sum: { views: true },
     });
 
@@ -45,9 +56,16 @@ const getUserProfile = async (req, res) => {
     });
 
     let isFollowing = false;
-    if (currentUserEmail && currentUserEmail !== email) {
+    // SECURITY FIX (M-02): Validate format and length of currentUserEmail before database lookup
+    if (
+      currentUserEmail &&
+      typeof currentUserEmail === 'string' &&
+      currentUserEmail.length <= 254 &&
+      emailRegex.test(currentUserEmail) &&
+      currentUserEmail.toLowerCase() !== targetUserEmail.toLowerCase()
+    ) {
       const currentUser = await prisma.user.findUnique({
-        where: { email: currentUserEmail },
+        where: { email: currentUserEmail.toLowerCase() },
         select: { id: true },
       });
 
@@ -143,24 +161,24 @@ const updateUserProfile = async (req, res) => {
 
 // Toggle Follow/Unfollow
 const toggleFollow = async (req, res) => {
-  const { targetEmail } = req.body;
+  const { targetEmail, targetId } = req.body;
   const follower = req.user;
 
-  if (!targetEmail) {
-    return res.status(400).json({ message: 'Target user email is required' });
-  }
-
-  if (follower.email.toLowerCase() === targetEmail.toLowerCase()) {
-    return res.status(400).json({ message: 'You cannot follow yourself' });
+  if (!targetEmail && !targetId) {
+    return res.status(400).json({ message: 'Target user email or ID is required' });
   }
 
   try {
     const target = await prisma.user.findUnique({
-      where: { email: targetEmail },
+      where: targetEmail ? { email: targetEmail.toLowerCase() } : { id: targetId },
     });
 
     if (!target) {
       return res.status(404).json({ message: 'Target user not found' });
+    }
+
+    if (follower.id === target.id || follower.email.toLowerCase() === target.email.toLowerCase()) {
+      return res.status(400).json({ message: 'You cannot follow yourself' });
     }
 
     const existingFollow = await prisma.follow.findUnique({
@@ -236,28 +254,29 @@ const toggleFollow = async (req, res) => {
   }
 };
 
-// Get Followers List
+// Get Followers List (Public, emails stripped for privacy protection)
 const getFollowers = async (req, res) => {
   const { email } = req.query;
 
-  if (!email) {
-    return res.status(400).json({ message: 'Email required' });
+  if (!email || typeof email !== 'string') {
+    return res.status(400).json({ message: 'Valid email required' });
   }
 
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
     if (!user) {
       return res.status(200).json({ followers: [] });
     }
 
     const records = await prisma.follow.findMany({
       where: { followingId: user.id },
+      take: 100, // SECURITY FIX: Bound follower queries
       include: {
         follower: {
           select: {
             id: true,
             name: true,
-            email: true,
+            // SECURITY FIX (H-02): Omit email from public unauthenticated endpoint
             image: true,
             bio: true,
           },
@@ -274,28 +293,29 @@ const getFollowers = async (req, res) => {
   }
 };
 
-// Get Following List
+// Get Following List (Public, emails stripped for privacy protection)
 const getFollowing = async (req, res) => {
   const { email } = req.query;
 
-  if (!email) {
-    return res.status(400).json({ message: 'Email required' });
+  if (!email || typeof email !== 'string') {
+    return res.status(400).json({ message: 'Valid email required' });
   }
 
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
     if (!user) {
       return res.status(200).json({ following: [] });
     }
 
     const records = await prisma.follow.findMany({
       where: { followerId: user.id },
+      take: 100, // SECURITY FIX: Bound following queries
       include: {
         following: {
           select: {
             id: true,
             name: true,
-            email: true,
+            // SECURITY FIX (H-02): Omit email from public unauthenticated endpoint
             image: true,
             bio: true,
           },

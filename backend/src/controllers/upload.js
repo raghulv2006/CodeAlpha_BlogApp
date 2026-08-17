@@ -78,7 +78,17 @@ const uploadMedia = async (req, res) => {
         format: uploadResult.format,
       });
     } catch (cloudErr) {
-      console.error('Cloudinary upload error:', cloudErr.message || cloudErr);
+      // SECURITY FIX (M-01): Log sanitized error summary to prevent credential context leakage
+      const isProd = process.env.NODE_ENV === 'production';
+      const safeErrorLog = {
+        name: cloudErr.name || 'CloudinaryError',
+        http_code: cloudErr.http_code || 500,
+        ...(isProd ? {} : { message: cloudErr.message }),
+      };
+      console.warn(
+        '[MEDIA UPLOAD] Primary cloud storage failed, falling back to secure local storage.',
+        safeErrorLog
+      );
 
       // Local fallback storage in case Cloudinary credentials need updating
       if (!fs.existsSync(uploadsDir)) {

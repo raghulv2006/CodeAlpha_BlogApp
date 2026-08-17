@@ -6,8 +6,10 @@ import Link from "next/link";
 import AuthLinks from "../authLinks/AuthLinks";
 import ThemeToggle from "../themeToggle/ThemeToggle";
 import { motion, AnimatePresence } from "framer-motion";
+import useSWR from "swr";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const fetcher = (url) => fetch(url).then((res) => (res.ok ? res.json() : null));
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -15,6 +17,11 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [userResults, setUserResults] = useState([]);
   const [searching, setSearching] = useState(false);
+
+  const { data: catData } = useSWR(`${API_URL}/api/categories`, fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 120000,
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -48,7 +55,7 @@ const Navbar = () => {
       } finally {
         setSearching(false);
       }
-    }, 200);
+    }, 80);
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
@@ -90,6 +97,7 @@ const Navbar = () => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.98 }}
               transition={{ duration: 0.18 }}
+              onMouseDown={(e) => e.preventDefault()}
             >
               {/* User Results Section */}
               {searchQuery.trim() && (
@@ -104,7 +112,7 @@ const Navbar = () => {
                       {userResults.map((u) => (
                         <Link
                           key={u.id || u.email}
-                          href={`/profile?email=${encodeURIComponent(u.email)}`}
+                          href={u.email ? `/profile?email=${encodeURIComponent(u.email)}` : `/profile?id=${encodeURIComponent(u.id)}`}
                           className={styles.userSearchItem}
                           onClick={() => setSearchFocused(false)}
                         >
@@ -112,14 +120,14 @@ const Navbar = () => {
                             <img src={u.image} alt={u.name || "User"} className={styles.userSearchAvatar} />
                           ) : (
                             <div className={styles.userSearchDefaultAvatar}>
-                              {(u.name || u.email || "U")[0].toUpperCase()}
+                              {(u.name || "U")[0].toUpperCase()}
                             </div>
                           )}
                           <div className={styles.userSearchInfo}>
                             <span className={styles.userSearchName}>
-                              @{u.name?.replace(/\s+/g, "_").toLowerCase() || u.email.split("@")[0]}
+                              @{u.handle || u.name?.replace(/\s+/g, "_").toLowerCase() || "user"}
                             </span>
-                            <span className={styles.userSearchEmail}>{u.email}</span>
+                            <span className={styles.userSearchEmail}>{u.name || "Creator"}</span>
                           </div>
                         </Link>
                       ))}
@@ -135,18 +143,22 @@ const Navbar = () => {
               {/* Popular Communities Section */}
               <div className={styles.dropdownHeader}>Popular Communities</div>
               <div className={styles.dropdownList}>
-                <Link href="/blog?cat=coding" className={styles.dropdownItem} onClick={() => setSearchFocused(false)}>
-                  💻 coding
-                </Link>
-                <Link href="/blog?cat=style" className={styles.dropdownItem} onClick={() => setSearchFocused(false)}>
-                  🎨 style
-                </Link>
-                <Link href="/blog?cat=food" className={styles.dropdownItem} onClick={() => setSearchFocused(false)}>
-                  🍔 food
-                </Link>
-                <Link href="/blog?tag=nextjs" className={styles.dropdownItem} onClick={() => setSearchFocused(false)}>
-                  #nextjs
-                </Link>
+                {catData && Array.isArray(catData) && catData.length > 0 ? (
+                  catData.slice(0, 4).map((c) => (
+                    <Link
+                      key={c.id || c.slug}
+                      href={`/blog?cat=${c.slug}`}
+                      className={styles.dropdownItem}
+                      onClick={() => setSearchFocused(false)}
+                    >
+                      📁 {c.title || c.slug}
+                    </Link>
+                  ))
+                ) : (
+                  <Link href="/blog" className={styles.dropdownItem} onClick={() => setSearchFocused(false)}>
+                    🔍 Explore All Communities
+                  </Link>
+                )}
               </div>
             </motion.div>
           )}

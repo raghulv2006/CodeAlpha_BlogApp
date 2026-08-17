@@ -15,8 +15,10 @@ function ProfileContent() {
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
 
-  // Active user target email (query param or currently logged-in user email)
-  const targetEmail = searchParams.get("email") || session?.user?.email;
+  // Active user target email or id (query param or currently logged-in user email)
+  const targetEmailParam = searchParams.get("email");
+  const targetIdParam = searchParams.get("id");
+  const targetEmail = targetEmailParam || (!targetIdParam ? session?.user?.email : null);
 
   const [activeTab, setActiveTab] = useState("posts"); // 'posts', 'about', 'bookmarks', 'followers', 'following'
   const [profileData, setProfileData] = useState(null);
@@ -65,12 +67,16 @@ function ProfileContent() {
       .finally(() => setUploadingAvatar(false));
   };
 
-  const isOwnProfile =
-    session?.user?.email && targetEmail === session?.user?.email;
+  const activeEmail = targetEmail || profileData?.user?.email;
+  const isOwnProfile = Boolean(
+    session?.user?.email &&
+    activeEmail &&
+    session.user.email.toLowerCase() === activeEmail.toLowerCase()
+  );
 
   // Fetch Profile Info
   const fetchProfile = React.useCallback(async () => {
-    if (!targetEmail) {
+    if (!targetEmail && !targetIdParam) {
       setLoading(false);
       return;
     }
@@ -83,10 +89,12 @@ function ProfileContent() {
           ? session.user.image
           : "";
 
+      const queryParam = targetIdParam
+        ? `id=${encodeURIComponent(targetIdParam)}`
+        : `email=${encodeURIComponent(targetEmail || "")}`;
+
       const res = await authFetch(
-        `${API_URL}/api/users/profile?email=${encodeURIComponent(
-          targetEmail
-        )}&currentUserEmail=${encodeURIComponent(currentEmail)}${
+        `${API_URL}/api/users/profile?${queryParam}&currentUserEmail=${encodeURIComponent(currentEmail)}${
           googlePhoto ? `&image=${encodeURIComponent(googlePhoto)}` : ""
         }`
       );
@@ -104,14 +112,15 @@ function ProfileContent() {
     } finally {
       setLoading(false);
     }
-  }, [targetEmail, session?.user?.email, session?.user?.image]);
+  }, [targetEmail, targetIdParam, session?.user?.email, session?.user?.image]);
 
   // Fetch User Posts
   const fetchPosts = React.useCallback(async () => {
-    if (!targetEmail) return;
+    const emailToUse = targetEmail || profileData?.user?.email;
+    if (!emailToUse) return;
     try {
       const res = await authFetch(
-        `${API_URL}/api/posts?userEmail=${encodeURIComponent(targetEmail)}`
+        `${API_URL}/api/posts?userEmail=${encodeURIComponent(emailToUse)}`
       );
       if (res.ok) {
         const data = await res.json();
@@ -120,14 +129,15 @@ function ProfileContent() {
     } catch (err) {
       console.error("Error fetching posts:", err);
     }
-  }, [targetEmail]);
+  }, [targetEmail, profileData?.user?.email]);
 
   // Fetch Followers
   const fetchFollowersList = React.useCallback(async () => {
-    if (!targetEmail) return;
+    const emailToUse = targetEmail || profileData?.user?.email;
+    if (!emailToUse) return;
     try {
       const res = await authFetch(
-        `${API_URL}/api/users/followers?email=${encodeURIComponent(targetEmail)}`
+        `${API_URL}/api/users/followers?email=${encodeURIComponent(emailToUse)}`
       );
       if (res.ok) {
         const data = await res.json();
@@ -136,14 +146,15 @@ function ProfileContent() {
     } catch (err) {
       console.error("Error fetching followers:", err);
     }
-  }, [targetEmail]);
+  }, [targetEmail, profileData?.user?.email]);
 
   // Fetch Following
   const fetchFollowingList = React.useCallback(async () => {
-    if (!targetEmail) return;
+    const emailToUse = targetEmail || profileData?.user?.email;
+    if (!emailToUse) return;
     try {
       const res = await authFetch(
-        `${API_URL}/api/users/following?email=${encodeURIComponent(targetEmail)}`
+        `${API_URL}/api/users/following?email=${encodeURIComponent(emailToUse)}`
       );
       if (res.ok) {
         const data = await res.json();
@@ -152,15 +163,16 @@ function ProfileContent() {
     } catch (err) {
       console.error("Error fetching following list:", err);
     }
-  }, [targetEmail]);
+  }, [targetEmail, profileData?.user?.email]);
 
   // Fetch Bookmarks
   const fetchBookmarks = React.useCallback(async () => {
-    if (!targetEmail) return;
+    const emailToUse = targetEmail || profileData?.user?.email;
+    if (!emailToUse || !isOwnProfile) return;
     setLoadingBookmarks(true);
     try {
       const res = await authFetch(
-        `${API_URL}/api/users/me/bookmarks?userEmail=${encodeURIComponent(targetEmail)}`
+        `${API_URL}/api/users/me/bookmarks?userEmail=${encodeURIComponent(emailToUse)}`
       );
       if (res.ok) {
         const data = await res.json();
@@ -171,38 +183,54 @@ function ProfileContent() {
     } finally {
       setLoadingBookmarks(false);
     }
-  }, [targetEmail]);
+  }, [targetEmail, profileData?.user?.email, isOwnProfile]);
 
   useEffect(() => {
     fetchProfile();
-    fetchPosts();
-  }, [fetchProfile, fetchPosts]);
+  }, [fetchProfile]);
 
   useEffect(() => {
-    if (activeTab === "bookmarks") {
+    if (profileData?.user?.email || targetEmail) {
+      fetchPosts();
+    }
+  }, [fetchPosts, profileData?.user?.email, targetEmail]);
+
+  useEffect(() => {
+    if (activeTab === "bookmarks" && isOwnProfile) {
       fetchBookmarks();
     }
-  }, [activeTab, fetchBookmarks]);
+  }, [activeTab, fetchBookmarks, isOwnProfile]);
 
   useEffect(() => {
     if (activeTab === "followers") fetchFollowersList();
     if (activeTab === "following") fetchFollowingList();
   }, [activeTab, fetchFollowersList, fetchFollowingList]);
 
-  // Handle Follow / Unfollow toggle
+  // Handle Follow / Unfollow toggle (Optimistic 0ms UI update)
   const handleToggleFollow = async () => {
     if (!session?.user?.email) {
       alert("Please log in to follow creators!");
       return;
     }
 
+    const emailToFollow = targetEmail || profileData?.user?.email;
+    const idToFollow = targetIdParam || profileData?.user?.id;
+    if (!emailToFollow && !idToFollow) return;
+
+    const previousFollowing = isFollowing;
+    const previousCount = followerCount;
+
+    // Instant optimistic update
+    setIsFollowing(!previousFollowing);
+    setFollowerCount((prev) => (!previousFollowing ? prev + 1 : Math.max(0, prev - 1)));
+
     try {
       const res = await authFetch(`${API_URL}/api/users/follow`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          followerEmail: session.user.email,
-          targetEmail: targetEmail,
+          targetEmail: emailToFollow,
+          targetId: idToFollow,
         }),
       });
 
@@ -210,9 +238,15 @@ function ProfileContent() {
         const data = await res.json();
         setIsFollowing(data.isFollowing);
         setFollowerCount(data.followerCount);
+      } else {
+        // Rollback on server failure
+        setIsFollowing(previousFollowing);
+        setFollowerCount(previousCount);
       }
     } catch (err) {
       console.error("Error toggling follow:", err);
+      setIsFollowing(previousFollowing);
+      setFollowerCount(previousCount);
     }
   };
 
@@ -250,32 +284,34 @@ function ProfileContent() {
 
   if (loading) {
     return (
-      <div className="wrapper">
-        <div className={styles.container}>
-          <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>⏳</div>
-            <p>Loading profile...</p>
-          </div>
+      <div className={styles.container}>
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>⏳</div>
+          <p>Loading profile...</p>
         </div>
       </div>
     );
   }
 
-  if (!targetEmail || !profileData) {
+  if (!profileData) {
     return (
-      <div className="wrapper">
-        <div className={styles.container}>
-          <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>👤</div>
-            <p>Please log in to view your profile, or select a user from any post.</p>
-            <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+      <div className={styles.container}>
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>👤</div>
+          <p>
+            {!targetEmail && !targetIdParam && !session?.user?.email
+              ? "Please log in to view your profile, or search for a creator."
+              : "User profile not found."}
+          </p>
+          <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+            {!session?.user?.email && (
               <Link href="/login" className={styles.followBtn}>
                 🔑 Log In / Sign Up
               </Link>
-              <Link href="/" className={styles.editBtn}>
-                🏠 Go Back Home
-              </Link>
-            </div>
+            )}
+            <Link href="/" className={styles.editBtn}>
+              🏠 Go Back Home
+            </Link>
           </div>
         </div>
       </div>
@@ -295,8 +331,7 @@ function ProfileContent() {
     : "Recently";
 
   return (
-    <div className="wrapper">
-      <div className={styles.container}>
+    <div className={styles.container}>
         {/* Banner */}
         <div className={styles.bannerContainer}>
           <div className={styles.bannerOverlay} />
@@ -321,7 +356,9 @@ function ProfileContent() {
 
             <div className={styles.actionButtons}>
               {isOwnProfile ? (
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.95 }}
                   className={styles.editBtn}
                   onClick={() => {
                     setEditName(profileData?.user?.name || "");
@@ -331,9 +368,11 @@ function ProfileContent() {
                   }}
                 >
                   ✏️ Edit Profile
-                </button>
+                </motion.button>
               ) : (
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.95 }}
                   className={
                     isFollowing ? styles.followingBtn : styles.followBtn
                   }
@@ -346,7 +385,7 @@ function ProfileContent() {
                       ? "✕ Unfollow"
                       : "✓ Following"
                     : "+ Follow"}
-                </button>
+                </motion.button>
               )}
             </div>
           </div>
@@ -373,31 +412,39 @@ function ProfileContent() {
 
           {/* Stats Bar */}
           <div className={styles.statsBar}>
-            <div
+            <motion.div
+              whileHover={{ y: -3, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               className={styles.statCard}
               onClick={() => setActiveTab("posts")}
             >
               <span className={styles.statValue}>{stats?.postCount || 0}</span>
               <span className={styles.statLabel}>Posts</span>
-            </div>
+            </motion.div>
 
-            <div
+            <motion.div
+              whileHover={{ y: -3, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               className={styles.statCard}
               onClick={() => setActiveTab("posts")}
             >
               <span className={styles.statValue}>{stats?.totalViews || 0}</span>
               <span className={styles.statLabel}>Post Karma/Views</span>
-            </div>
+            </motion.div>
 
-            <div
+            <motion.div
+              whileHover={{ y: -3, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               className={styles.statCard}
               onClick={() => setActiveTab("followers")}
             >
               <span className={styles.statValue}>{followerCount}</span>
               <span className={styles.statLabel}>Followers</span>
-            </div>
+            </motion.div>
 
-            <div
+            <motion.div
+              whileHover={{ y: -3, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               className={styles.statCard}
               onClick={() => setActiveTab("following")}
             >
@@ -405,58 +452,63 @@ function ProfileContent() {
                 {stats?.followingCount || 0}
               </span>
               <span className={styles.statLabel}>Following</span>
-            </div>
+            </motion.div>
           </div>
         </div>
 
         {/* Profile Tabs Navigation */}
         <div className={styles.tabsContainer}>
-          <button
+          <motion.button
+            whileTap={{ scale: 0.96 }}
             className={`${styles.tabBtn} ${
               activeTab === "posts" ? styles.activeTab : ""
             }`}
             onClick={() => setActiveTab("posts")}
           >
             📝 Posts ({posts.length})
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.96 }}
             className={`${styles.tabBtn} ${
               activeTab === "about" ? styles.activeTab : ""
             }`}
             onClick={() => setActiveTab("about")}
           >
             ℹ️ About
-          </button>
+          </motion.button>
 
           {isOwnProfile && (
-            <button
+            <motion.button
+              whileTap={{ scale: 0.96 }}
               className={`${styles.tabBtn} ${
                 activeTab === "bookmarks" ? styles.activeTab : ""
               }`}
               onClick={() => setActiveTab("bookmarks")}
             >
               🔖 Saved ({bookmarks.length})
-            </button>
+            </motion.button>
           )}
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.96 }}
             className={`${styles.tabBtn} ${
               activeTab === "followers" ? styles.activeTab : ""
             }`}
             onClick={() => setActiveTab("followers")}
           >
             👥 Followers ({followerCount})
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.96 }}
             className={`${styles.tabBtn} ${
               activeTab === "following" ? styles.activeTab : ""
             }`}
             onClick={() => setActiveTab("following")}
           >
             👤 Following ({stats?.followingCount || 0})
-          </button>
+          </motion.button>
         </div>
 
         {/* Tab Content Display */}
@@ -555,29 +607,27 @@ function ProfileContent() {
               {followers && followers.length > 0 ? (
                 followers.map((fUser) => (
                   <Link
-                    href={`/profile?email=${encodeURIComponent(fUser.email)}`}
+                    href={fUser.id ? `/profile?id=${encodeURIComponent(fUser.id)}` : `/profile?email=${encodeURIComponent(fUser.email || "")}`}
                     key={fUser.id}
                     className={styles.userCard}
                   >
                     {fUser.image ? (
                       <img
                         src={fUser.image}
-                        alt={fUser.name}
+                        alt={fUser.name || "User"}
                         className={styles.smallAvatar}
                       />
                     ) : (
                       <div className={styles.smallAvatarFallback}>
-                        {(fUser.name || fUser.email)[0].toUpperCase()}
+                        {(fUser.name || "U")[0].toUpperCase()}
                       </div>
                     )}
                     <div className={styles.userCardDetails}>
                       <span className={styles.userCardName}>
-                        {fUser.name || fUser.email}
+                        {fUser.name || "Creator"}
                       </span>
                       <span className={styles.userCardHandle}>
-                        @
-                        {fUser.name?.replace(/\s+/g, "_").toLowerCase() ||
-                          fUser.email.split("@")[0]}
+                        @{fUser.name?.replace(/\s+/g, "_").toLowerCase() || "user"}
                       </span>
                     </div>
                   </Link>
@@ -596,29 +646,27 @@ function ProfileContent() {
               {following && following.length > 0 ? (
                 following.map((fUser) => (
                   <Link
-                    href={`/profile?email=${encodeURIComponent(fUser.email)}`}
+                    href={fUser.id ? `/profile?id=${encodeURIComponent(fUser.id)}` : `/profile?email=${encodeURIComponent(fUser.email || "")}`}
                     key={fUser.id}
                     className={styles.userCard}
                   >
                     {fUser.image ? (
                       <img
                         src={fUser.image}
-                        alt={fUser.name}
+                        alt={fUser.name || "User"}
                         className={styles.smallAvatar}
                       />
                     ) : (
                       <div className={styles.smallAvatarFallback}>
-                        {(fUser.name || fUser.email)[0].toUpperCase()}
+                        {(fUser.name || "U")[0].toUpperCase()}
                       </div>
                     )}
                     <div className={styles.userCardDetails}>
                       <span className={styles.userCardName}>
-                        {fUser.name || fUser.email}
+                        {fUser.name || "Creator"}
                       </span>
                       <span className={styles.userCardHandle}>
-                        @
-                        {fUser.name?.replace(/\s+/g, "_").toLowerCase() ||
-                          fUser.email.split("@")[0]}
+                        @{fUser.name?.replace(/\s+/g, "_").toLowerCase() || "user"}
                       </span>
                     </div>
                   </Link>
@@ -752,13 +800,12 @@ function ProfileContent() {
           </div>
         )}
       </div>
-    </div>
   );
 }
 
 export default function ProfilePage() {
   return (
-    <Suspense fallback={<div className="wrapper"><p style={{ padding: 40, textAlign: "center" }}>Loading profile...</p></div>}>
+    <Suspense fallback={<div className={styles.container}><p style={{ padding: 40, textAlign: "center" }}>Loading profile...</p></div>}>
       <ProfileContent />
     </Suspense>
   );

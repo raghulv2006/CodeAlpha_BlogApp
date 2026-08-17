@@ -25,6 +25,52 @@ const getData = async (slug) => {
   }
 };
 
+export async function generateMetadata({ params }) {
+  const resolvedParams = await Promise.resolve(params);
+  const slug = resolvedParams?.slug;
+  const post = await getData(slug);
+
+  if (!post) {
+    return {
+      title: 'Article Not Found - BotBlogs',
+      description: 'The requested article could not be found.',
+    };
+  }
+
+  // Strip HTML tags for clean description snippet
+  const cleanSnippet = post.desc
+    ? post.desc.replace(/<[^>]*>?/gm, '').substring(0, 160).trim()
+    : 'Read this article on BotBlogs';
+
+  const previewImage = post.img || '/p1.jpeg';
+
+  return {
+    title: `${post.title} | BotBlogs`,
+    description: cleanSnippet,
+    openGraph: {
+      title: post.title,
+      description: cleanSnippet,
+      type: 'article',
+      publishedTime: post.createdAt,
+      authors: [post.user?.name || 'BotBlogs Creator'],
+      images: [
+        {
+          url: previewImage,
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: cleanSnippet,
+      images: [previewImage],
+    },
+  };
+}
+
 const SinglePage = async ({ params }) => {
   const resolvedParams = await Promise.resolve(params);
   const slug = resolvedParams?.slug;
@@ -108,20 +154,23 @@ const SinglePage = async ({ params }) => {
             className={styles.articleBody}
             dangerouslySetInnerHTML={{
               __html: sanitizeHtml(data?.desc || "", {
-                allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "video", "source", "iframe", "h1", "h2", "u", "s"]),
+                allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "video", "source", "iframe", "h1", "h2", "u", "s", "pre", "code"]),
                 allowedAttributes: {
                   ...sanitizeHtml.defaults.allowedAttributes,
                   img: ["src", "alt", "width", "height"],
                   video: ["src", "controls", "width", "height", "autoplay", "muted", "loop"],
                   source: ["src", "type"],
-                  iframe: ["src", "width", "height", "allowfullscreen"],
+                  iframe: ["src", "width", "height", "allowfullscreen", "frameborder"],
+                  code: ["class"],
+                  pre: ["class"],
                 },
                 allowedSchemes: ["https", "http", "mailto"],
                 allowedSchemesByTag: {
-                  img: ["https", "http", "data"],
-                  iframe: ["https"], // Only allow https iframes to prevent javascript: and data: URIs
+                  img: ["https", "http"],
+                  iframe: ["https"],
                   a: ["https", "http", "mailto"],
                 },
+                allowedIframeHostnames: ["www.youtube.com", "youtube.com", "player.vimeo.com"],
               }),
             }}
           />

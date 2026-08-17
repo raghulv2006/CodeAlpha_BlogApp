@@ -113,28 +113,33 @@ const Comments = ({ postSlug }) => {
                 transition={{ duration: 0.2 }}
               >
                 <div className={styles.userHeader}>
-                  {item?.user?.image ? (
-                    <div className={styles.avatarWrapper}>
-                      <img
-                        src={item.user.image}
-                        alt={item.user.name || "User"}
-                        className={styles.avatar}
-                        onError={(e) => { e.target.style.display = "none"; }}
-                      />
+                  <Link
+                    href={item?.userEmail ? `/profile?email=${encodeURIComponent(item.userEmail)}` : '#'}
+                    style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}
+                  >
+                    {item?.user?.image ? (
+                      <div className={styles.avatarWrapper}>
+                        <img
+                          src={item.user.image}
+                          alt={item.user.name || "User"}
+                          className={styles.avatar}
+                          onError={(e) => { e.target.style.display = "none"; }}
+                        />
+                      </div>
+                    ) : (
+                      <div className={styles.defaultAvatar}>
+                        {(item?.user?.name || "U")[0].toUpperCase()}
+                      </div>
+                    )}
+                    <div className={styles.userInfo}>
+                      <span className={styles.username}>
+                        @{item?.user?.name?.replace(/\s+/g, "_").toLowerCase() || item?.userEmail?.split("@")[0] || "user"}
+                      </span>
+                      <span className={styles.date}>
+                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "Just now"}
+                      </span>
                     </div>
-                  ) : (
-                    <div className={styles.defaultAvatar}>
-                      {(item?.user?.name || "U")[0].toUpperCase()}
-                    </div>
-                  )}
-                  <div className={styles.userInfo}>
-                    <span className={styles.username}>
-                      @{item?.user?.name?.replace(/\s+/g, "_").toLowerCase() || item?.userEmail?.split("@")[0] || "user"}
-                    </span>
-                    <span className={styles.date}>
-                      {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "Just now"}
-                    </span>
-                  </div>
+                  </Link>
                 </div>
                 <p className={styles.commentBody}>{item.desc}</p>
               </motion.div>

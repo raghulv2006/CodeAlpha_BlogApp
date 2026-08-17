@@ -1,17 +1,21 @@
 const prisma = require('../utils/prisma');
+const { invalidateCategoriesCache } = require('./categories');
+const { viewThrottleCache, appCache } = require('../utils/cache');
 
-// TTL-aware view throttle — tracks ip+slug with a timestamp
-// Prevents the same IP from inflating views more than once per hour per post
-const viewedPosts = new Map();
-const VIEW_THROTTLE_MS = 60 * 60 * 1000; // 1 hour
+const invalidateTagsCache = () => {
+  appCache.del('tags:all');
+  appCache.del('tags:trending');
+};
 
-// Prune expired entries every 30 minutes to prevent unbounded memory growth
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, ts] of viewedPosts.entries()) {
-    if (now - ts > VIEW_THROTTLE_MS) viewedPosts.delete(key);
-  }
-}, 30 * 60 * 1000);
+const invalidatePostsCache = () => {
+  invalidateTagsCache();
+  const keys = appCache.keys();
+  keys.forEach((key) => {
+    if (key.startsWith('posts:') || key.startsWith('post:')) {
+      appCache.del(key);
+    }
+  });
+};
 
 // Helper to parse tags array or extract hashtags from text
 const extractAndUpsertTags = async (tagsArray = [], descText = '') => {
@@ -48,6 +52,12 @@ const getPosts = async (req, res) => {
   const tag = req.query.tag;
   const userEmail = req.query.userEmail;
   const sort = req.query.sort || 'new'; // 'new', 'top', 'hot'
+
+  const cacheKey = `posts:${page}:${cat || 'all'}:${tag || 'all'}:${sort}:${userEmail || 'anon'}`;
+  const cached = appCache.get(cacheKey);
+  if (cached) {
+    return res.status(200).json(cached);
+  }
 
   const POST_PER_PAGE = 10;
 
@@ -147,7 +157,10 @@ const getPosts = async (req, res) => {
       };
     });
 
-    return res.status(200).json({ posts, count });
+    const responsePayload = { posts, count };
+    appCache.set(cacheKey, responsePayload, 15000);
+
+    return res.status(200).json(responsePayload);
   } catch (err) {
     console.error('Error getting posts:', err);
     return res.status(500).json({ message: 'Something went wrong!' });
@@ -159,42 +172,60 @@ const getPostBySlug = async (req, res) => {
   const { userEmail } = req.query;
 
   try {
-    const viewKey = `${req.ip}-${slug}`;
-    let post;
-
-    const lastViewed = viewedPosts.get(viewKey);
-    const shouldCountView = !lastViewed || (Date.now() - lastViewed > VIEW_THROTTLE_MS);
-
-    if (shouldCountView) {
-      viewedPosts.set(viewKey, Date.now());
-      post = await prisma.post.update({
-        where: { slug },
-        data: { views: { increment: 1 } },
-        include: {
-          user: true,
-          cat: true,
-          tags: true,
-          votes: true,
-          comments: { include: { user: true }, orderBy: { createdAt: 'desc' } },
+    const post = await prisma.post.findUnique({
+      where: { slug },
+      include: {
+        // SECURITY FIX (L-02): Restrict user selection to minimal public fields
+        user: {
+          select: {
+            name: true,
+            image: true,
+          },
         },
-      });
-    } else {
-      post = await prisma.post.findUnique({
-        where: { slug },
-        include: {
-          user: true,
-          cat: true,
-          tags: true,
-          votes: true,
-          comments: { include: { user: true }, orderBy: { createdAt: 'desc' } },
+        cat: true,
+        tags: true,
+        votes: true,
+        comments: {
+          take: 50,
+          include: {
+            user: {
+              select: {
+                name: true,
+                image: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
         },
-      });
+      },
+    });
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
     }
 
-    const netVotes = post.votes.reduce((acc, v) => acc + v.value, 0);
+    // View throttle tracking via unified LRU & TTL cache manager
+    const viewKey = `view:${req.ip}-${slug}`;
+    const alreadyViewed = viewThrottleCache.get(viewKey);
+
+    if (!alreadyViewed) {
+      viewThrottleCache.set(viewKey, true, 60 * 60 * 1000); // 1 hour TTL
+      // Increment views asynchronously without blocking response
+      prisma.post
+        .update({
+          where: { slug },
+          data: { views: { increment: 1 } },
+        })
+        .catch((err) => console.error('Failed to increment post views:', err));
+      post.views += 1;
+    }
+
+    const netVotes = post.votes ? post.votes.reduce((acc, v) => acc + v.value, 0) : 0;
     let currentUserVote = 0;
-    if (userEmail) {
-      const userVoteRecord = post.votes.find((v) => v.userId === userEmail || (v.user && v.user.email === userEmail));
+    if (userEmail && post.votes) {
+      const userVoteRecord = post.votes.find(
+        (v) => v.userId === userEmail || (v.user && v.user.email === userEmail)
+      );
       if (userVoteRecord) currentUserVote = userVoteRecord.value;
     }
 
@@ -205,7 +236,7 @@ const getPostBySlug = async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching post:', err);
-    return res.status(500).json({ message: 'Post not found!' });
+    return res.status(500).json({ message: 'Internal server error while fetching post' });
   }
 };
 
@@ -236,6 +267,7 @@ const createPost = async (req, res) => {
       update: {},
       create: { slug: categorySlug, title: categorySlug },
     });
+    invalidateCategoriesCache();
 
     const connectedTags = await extractAndUpsertTags(tags, desc || '');
 
@@ -263,6 +295,9 @@ const createPost = async (req, res) => {
       },
     });
 
+    invalidateTagsCache();
+    invalidatePostsCache();
+
     return res.status(200).json(post);
   } catch (err) {
     console.error('Error creating post:', err);
@@ -284,12 +319,13 @@ const updatePost = async (req, res) => {
   }
 
   if (tags && tags.length > 20) {
-    return res.status(400).json({ message: 'Maximum 20 tags allowed' });
+    return res.status(400).json({ message: 'Maximum 20 tags allowed per post' });
   }
 
   try {
     const existingPost = await prisma.post.findUnique({
       where: { slug },
+      select: { id: true, slug: true, userEmail: true },
     });
 
     if (!existingPost) {
@@ -297,7 +333,7 @@ const updatePost = async (req, res) => {
     }
 
     if (existingPost.userEmail.toLowerCase() !== user.email.toLowerCase()) {
-      return res.status(403).json({ message: 'Unauthorized to edit this post' });
+      return res.status(403).json({ message: 'Forbidden: You are not authorized to edit this post' });
     }
 
     if (catSlug) {
@@ -306,6 +342,7 @@ const updatePost = async (req, res) => {
         update: {},
         create: { slug: catSlug, title: catSlug },
       });
+      invalidateCategoriesCache();
     }
 
     const connectedTags = await extractAndUpsertTags(tags, desc || '');
@@ -331,6 +368,9 @@ const updatePost = async (req, res) => {
       },
     });
 
+    invalidateTagsCache();
+    invalidatePostsCache();
+
     return res.status(200).json(updatedPost);
   } catch (err) {
     console.error('Error updating post:', err);
@@ -343,8 +383,14 @@ const votePost = async (req, res) => {
   const { value } = req.body; // value: 1 (up), -1 (down), 0 (remove)
   const user = req.user;
 
-  try {
+  // SECURITY FIX (C-01): Strictly validate vote value type and allowed values (-1, 0, 1)
+  if (typeof value !== 'number' || !Number.isInteger(value) || ![-1, 0, 1].includes(value)) {
+    return res.status(400).json({ message: 'Invalid vote value. Allowed values are integer numbers: 1 (upvote), -1 (downvote), 0 (remove)' });
+  }
 
+  const voteValue = value;
+
+  try {
     const post = await prisma.post.findUnique({
       where: { slug },
       select: { id: true },
@@ -363,7 +409,7 @@ const votePost = async (req, res) => {
       },
     });
 
-    if (value === 0 || (existingVote && existingVote.value === value)) {
+    if (voteValue === 0 || (existingVote && existingVote.value === voteValue)) {
       // Remove vote if same value or explicitly 0
       if (existingVote) {
         await prisma.vote.delete({
@@ -384,14 +430,17 @@ const votePost = async (req, res) => {
             postId: post.id,
           },
         },
-        update: { value },
+        update: { value: voteValue },
         create: {
           userId: user.id,
           postId: post.id,
-          value,
+          value: voteValue,
         },
       });
     }
+
+    // Invalidate post cache so counts are up to date
+    invalidatePostsCache();
 
     // Get fresh total votes
     const votes = await prisma.vote.findMany({
@@ -434,6 +483,9 @@ const deletePost = async (req, res) => {
     await prisma.post.delete({
       where: { id: post.id },
     });
+
+    invalidateTagsCache();
+    invalidatePostsCache();
 
     return res.status(200).json({ message: "Post deleted successfully" });
   } catch (error) {

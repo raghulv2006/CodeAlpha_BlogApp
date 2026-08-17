@@ -4,83 +4,50 @@ Welcome to the frontend codebase documentation for **BotBlogs**, a modern, full-
 
 ---
 
-## 📁 Detailed Directory Structure
+## 📁 Directory Structure
 
-```micro-tree
+```
 frontend/
-├── public/                     # Static media assets & category icons
+├── public/                     # Static media assets, icons, and branding
 ├── src/
 │   ├── app/                    # Next.js 14 App Router Pages & Layouts
+│   │   ├── about/              # About us, directory links & platform sitemap
 │   │   ├── blog/               # Category & tag filtered feed page
-│   │   │   ├── blogPage.module.css
-│   │   │   └── page.jsx
-│   │   ├── login/              # Login & authentication page
-│   │   │   ├── loginPage.module.css
-│   │   │   └── page.jsx
+│   │   ├── login/              # Firebase Google login page
+│   │   ├── notifications/      # Live user alerts & notification feed
 │   │   ├── posts/[slug]/       # Single post detail view page
-│   │   │   ├── page.jsx
-│   │   │   └── singlePage.module.css
-│   │   ├── posts/[slug]/edit/  # Edit existing post page (Author-Protected)
-│   │   │   └── page.jsx
-│   │   ├── profile/            # User profile, photo manager, stats & posts
-│   │   │   ├── page.jsx
-│   │   │   └── profile.module.css
+│   │   ├── posts/[slug]/edit/  # Author-protected edit post page
+│   │   ├── profile/            # View-only & owner profile pages with follow toggle
 │   │   ├── write/              # Multi-step media-first post composer
-│   │   │   └── page.jsx
-│   │   ├── globals.css         # Global CSS variables & eye-friendly design system
+│   │   ├── error.jsx           # Graceful error boundary UI
+│   │   ├── not-found.jsx       # Custom 404 page
+│   │   ├── globals.css         # Global design system & theme variables
 │   │   ├── homepage.module.css # Styles for landing page
-│   │   ├── layout.js           # Root layout wrapping Context Providers
-│   │   └── page.jsx            # Home page (Main Feed with Server Prefetching)
+│   │   ├── layout.js           # Root layout wrapping AppShell & Providers
+│   │   ├── page.jsx            # Home page (Main Feed with Server Prefetching)
+│   │   ├── robots.js           # Search engine robots configuration
+│   │   └── sitemap.js          # Dynamic XML sitemap generator
+│   │
 │   ├── components/             # Reusable UI Components
+│   │   ├── animation/          # PageTransition animation wrapper
+│   │   ├── appShell/           # Responsive Desktop & Mobile AppShell with Sidebars
 │   │   ├── authLinks/          # Auth status links & mobile drawer
-│   │   │   ├── AuthLinks.jsx
-│   │   │   └── authLinks.module.css
-│   │   ├── card/               # Instagram-style post card with voting & @username handles
-│   │   │   ├── Card.jsx
-│   │   │   └── card.module.css
-│   │   ├── cardList/           # Main feed container with SWR & initial hydration
-│   │   │   ├── CardList.jsx
-│   │   │   └── cardList.module.css
+│   │   ├── bookmarkArticleButton/ # 1-click bookmarking button
+│   │   ├── card/               # Post card with 0ms optimistic voting & bookmarking
+│   │   ├── cardList/           # Infinite scroll feed container with SWR caching
 │   │   ├── categoryList/       # Horizontal community category filter bar
-│   │   │   ├── CategoryList.jsx
-│   │   │   └── categoryList.module.css
-│   │   ├── comments/           # Interactive post comments section
-│   │   │   ├── Comments.jsx
-│   │   │   └── comments.module.css
+│   │   ├── comments/           # Interactive post comments with author links
+│   │   ├── deleteArticleButton/# Author-only delete post confirmation modal
 │   │   ├── editArticleButton/  # Author-only conditional post edit button
-│   │   │   └── EditArticleButton.jsx
-│   │   ├── featured/           # Hero welcome banner for first-time visitors
-│   │   │   ├── Featured.jsx
-│   │   │   └── featured.module.css
-│   │   ├── footer/             # Global footer component with clean category links
-│   │   │   ├── Footer.jsx
-│   │   │   └── footer.module.css
-│   │   ├── Menu/               # Sidebar widget for trending picks
-│   │   │   ├── Menu.jsx
-│   │   │   └── menu.module.css
-│   │   ├── menuCategories/     # Quick category chips sidebar widget
-│   │   │   ├── MenuCategories.jsx
-│   │   │   └── menuCategories.module.css
+│   │   ├── featured/           # Dismissible welcome hero banner
+│   │   ├── keyboardShortcuts/  # Global keyboard shortcut handler & help modal
 │   │   ├── menuPosts/          # Dynamic trending posts widget
-│   │   │   ├── MenuPosts.jsx
-│   │   │   └── menuPosts.module.css
-│   │   ├── navbar/             # Top navigation bar with live search
-│   │   │   ├── Navbar.jsx
-│   │   │   └── navbar.module.css
-│   │   ├── pagination/         # Feed pagination controls
-│   │   │   ├── Pagination.jsx
-│   │   │   └── pagination.module.css
-│   │   ├── postComposer/       # Instagram-style multi-step media composer
-│   │   │   ├── PostComposer.jsx
-│   │   │   └── postComposer.module.css
-│   │   ├── singlePostMedia/    # Shared element media morph container
-│   │   │   └── SinglePostMedia.jsx
+│   │   ├── navbar/             # Top sticky navbar with debounced search
+│   │   ├── postComposer/       # Multi-step rich media post creator
+│   │   ├── singlePostMedia/    # 4:3 ratio media container
 │   │   ├── skeleton/           # Shimmer loading skeleton cards
-│   │   │   ├── SkeletonCard.jsx
-│   │   │   └── skeleton.module.css
 │   │   └── themeToggle/        # Dark / Light theme toggle switch
-│   │       ├── ThemeToggle.jsx
-│   │       └── themeToggle.module.css
+│   │
 │   ├── context/                # React Context State Management
 │   │   ├── AuthContext.jsx     # Firebase Auth Context shim
 │   │   └── ThemeContext.jsx    # Light/Dark Theme Context with eye-flash protection
@@ -88,6 +55,7 @@ frontend/
 │   │   ├── AuthProvider.jsx    # Auth Provider wrapper
 │   │   └── ThemeProvider.jsx   # Theme Provider wrapper (SSR flash guard)
 │   └── utils/                  # Helper Utilities
+│       ├── api.js              # Authenticated fetch utility with Firebase tokens
 │       └── firebase.js         # Firebase Client SDK initialization
 ├── .env.example                # Environment variables template
 ├── jsconfig.json               # Path alias configuration (@/*)
@@ -97,39 +65,30 @@ frontend/
 
 ---
 
-## 🌟 Key Features & Updates
+## 🌟 Core Frontend Highlights
 
-### 1. 🖼️ Instagram 4:3 Aspect Ratio & `@username` Handles
-- **Instagram Media Dimensions**: All post preview media in feeds, single detail pages, inline article images/videos, and post composer previews strictly enforce a **4:3 aspect ratio** (`aspect-ratio: 4 / 3; object-fit: cover;`) capped at `640px` max-width.
-- **Instagram User Handles**: Replaced legacy Reddit-style `u/username` formatting with clean Instagram `@username` handles across post cards, single post pages, comment threads, and profile tabs.
+### 1. 📱 Responsive Modern App Shell
+- **Desktop Sidebar Navigation (>= 1024px)**: Left-docked glassmorphism sidebar with quick links, unread notification counter, and theme switcher.
+- **Mobile Bottom Navigation (< 1024px)**: Compact bottom bar optimized for one-handed mobile navigation.
+- **Right Utility Rail**: Real-time Suggested Accounts with 1-click profile view and Trending Hashtag pills.
 
-### 2. 🔐 Author-Only Post Editing Security
-- **Conditional Edit Buttons**: Rendered via `EditArticleButton.jsx`, displaying the "✏️ Edit Article" option **only** when the signed-in user's email matches the post author's email (`session.user.email === post.userEmail`).
-- **Protected Edit Routes (`/posts/[slug]/edit`)**: Guarded by an inline access control validation displaying an `⛔ Access Denied` view if unauthorized users navigate directly via URL.
+### 2. ⚡ 0ms Optimistic UI & Tactile Micro-Animations
+- **Optimistic Voting**: Upvote / downvote counters update instantaneously with spring bounce transitions.
+- **Instant Bookmark**: Star badges toggle immediately without waiting for server response.
+- **Optimistic Follow / Unfollow**: Instant creator follow toggle with live count adjustment.
+- **Framer Motion Micro-Interactions**: Scale, hover lift, and click compression across buttons, cards, and tabs.
 
-### 3. 📸 Google Sync & Custom Profile Photo Uploads
-- **Google Account Photo Sync**: Automatically retrieves and renders the user's `session.user.image` from Firebase Google Authentication.
-- **Profile Photo Uploader**: Embedded in the Edit Profile modal:
-  - **File Upload**: Direct device file picker uploading images to Cloudinary.
-  - **URL Input**: Option to paste any custom image URL.
-  - **Google Photo Reset**: Option to instantly reset to the user's Google Account photo.
-  - **Live Preview**: Real-time circular avatar preview inside the modal before saving.
+### 3. 👥 Profile Viewing System
+- **View-Only Mode**: Clean viewing mode for browsing other creators' profiles without exposing edit actions or private saved bookmarks.
+- **Dynamic Identification**: Supports profile lookup by either user email or unique ID (`/profile?email=...` or `/profile?id=...`).
+- **Interactive Commenters**: Comment authors and usernames link directly to their public profile pages.
 
-### 4. 🏷️ Clean Community Formatting & Post Composer Pills
-- **Prefix Removal & Capitalization**: Stripped legacy `r/` prefixes and capitalized all community names (`Coding`, `Technology`, `Gaming`, `Style`, `Fashion`, `Food`, `Travel`, `Culture`, `Entertainment`, `News`).
-- **Interactive Community Selector**: Post creation page (`PostComposer.jsx`) renders system default communities alongside user-created communities with interactive pill buttons and custom `User` badges.
+### 4. 🔍 Live Debounced Search
+- **80ms Debounce**: High-speed live search querying creators and communities with zero UI stutter.
+- **Smart Blur Protection**: Prevents search dropdown from prematurely closing during click transitions.
 
-### 5. 👁️ Eye-Friendly Rich Light Theme System
-- **Glare-Free Palette**: Default `:root` styling features a soft warm Slate-50 off-white (`#f8fafc`), crisp white card surfaces (`#ffffff`), deep Slate-900 typography (`#0f172a`), and Emerald-600 accents (`#059669`).
-- **Zero Eye-Flash SSR Guard**: Pre-hydration fallback in `ThemeProvider.jsx` set to `light`, preventing jarring dark-to-light screen flashes on initial page load.
-- **Smooth Theme Transitions**: Applied global CSS transitions (`0.25s ease`) for seamless background and color switches.
-
-### 6. 🟢/🔴 Dynamic Follow / Unfollow Button Interaction
-- **Not Following (`+ Follow`)**: Solid green button with vibrant green glow on hover (`#16a34a`).
-- **Already Following (`✓ Following`)**: Green outline button that dynamically transforms into a red button displaying **`✕ Unfollow`** with red border (`#ef4444`) on mouse hover.
-
-### 7. 🔗 Universal Article Card Navigation
-- **Clickable Cards**: Clicking post preview images, titles, description snippets, or the `Read Article →` button instantly navigates to the read article page (`/posts/[slug]`).
+### 5. 🖼️ Instagram 4:3 Aspect Ratio
+- **Consistent Visual Presentation**: All post cards, previews, and single detail pages maintain a clean 4:3 media aspect ratio.
 
 ---
 
@@ -142,16 +101,25 @@ frontend/
    ```
 
 2. **Environment Configuration**:
-   Create a `.env` file in the `frontend/` directory:
+   Create `.env` in `frontend/`:
    ```env
    NEXT_PUBLIC_API_URL="http://localhost:5000"
-   NEXT_PUBLIC_FIREBASE_API_KEY="your_firebase_key"
-   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your_app.firebaseapp.com"
+   NEXT_PUBLIC_FIREBASE_API_KEY="your_api_key"
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your_project.firebaseapp.com"
    NEXT_PUBLIC_FIREBASE_PROJECT_ID="your_project_id"
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="your_project.firebasestorage.app"
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="your_sender_id"
+   NEXT_PUBLIC_FIREBASE_APP_ID="your_app_id"
    ```
 
 3. **Run Development Server**:
    ```bash
    npm run dev
    ```
-   Access application at **`http://localhost:3000`**.
+   Open [http://localhost:3000](http://localhost:3000).
+
+4. **Production Build**:
+   ```bash
+   npm run build
+   npm run start
+   ```

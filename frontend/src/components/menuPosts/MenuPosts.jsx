@@ -9,32 +9,17 @@ import styles from "./menuPosts.module.css";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
-const fallbackPosts = [
-  {
-    slug: "mastering-nextjs-14-architecture",
-    catSlug: "coding",
-    title: "Mastering Next.js 14 App Router & Prisma Architecture",
-    userEmail: "raghul@botblogs.dev",
-    createdAt: new Date().toISOString(),
-    img: "/p1.jpeg",
-  },
-  {
-    slug: "future-of-web-development-2026",
-    catSlug: "style",
-    title: "The Future of Web Development & Modern UI Trends",
-    userEmail: "creator@botblogs.dev",
-    createdAt: new Date().toISOString(),
-    img: "/culture.png",
-  },
-];
-
 const MenuPosts = ({ withImage }) => {
   const { data } = useSWR(`${API_URL}/api/posts?sort=top&page=1`, fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 60000,
   });
 
-  const posts = data?.posts && data.posts.length > 0 ? data.posts.slice(0, 3) : fallbackPosts;
+  const posts = data?.posts && data.posts.length > 0 ? data.posts.slice(0, 3) : [];
+
+  if (posts.length === 0) {
+    return null;
+  }
 
   return (
     <div className={styles.items}>

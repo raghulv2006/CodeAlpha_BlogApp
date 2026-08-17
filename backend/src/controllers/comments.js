@@ -6,9 +6,18 @@ const getComments = async (req, res) => {
   try {
     const comments = await prisma.comment.findMany({
       where: {
-        ...(postSlug && { postSlug }),
+        ...(postSlug && typeof postSlug === 'string' && { postSlug: postSlug.trim() }),
       },
-      include: { user: true },
+      include: {
+        // SECURITY FIX (H-01): Minimal public user fields
+        user: {
+          select: {
+            name: true,
+            image: true,
+          },
+        },
+      },
+      take: 100, // SECURITY FIX (H-01): Bound max comments per fetch to prevent payload exhaustion
       orderBy: { createdAt: 'desc' },
     });
 
@@ -23,7 +32,12 @@ const createComment = async (req, res) => {
   const { desc, postSlug } = req.body;
   const user = req.user;
 
-  if (!desc || !desc.trim()) {
+  // SECURITY FIX (C-02): Validate postSlug parameter
+  if (!postSlug || typeof postSlug !== 'string' || !postSlug.trim() || postSlug.trim().length > 300) {
+    return res.status(400).json({ message: 'Valid postSlug is required (max 300 characters)' });
+  }
+
+  if (!desc || typeof desc !== 'string' || !desc.trim()) {
     return res.status(400).json({ message: 'Comment cannot be empty' });
   }
 
@@ -32,22 +46,35 @@ const createComment = async (req, res) => {
   }
 
   try {
-
-    const comment = await prisma.comment.create({
-      data: {
-        desc,
-        postSlug,
-        userEmail: user.email,
-      },
-    });
-
-    // Trigger Notification for Post Author
+    // SECURITY FIX (C-02): Verify post actually exists to avoid orphaned comments and FK crashes
     const post = await prisma.post.findUnique({
-      where: { slug: postSlug },
+      where: { slug: postSlug.trim() },
       select: { userEmail: true, title: true },
     });
 
-    if (post?.userEmail && post.userEmail.toLowerCase() !== user.email.toLowerCase()) {
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found. Cannot comment on non-existent post.' });
+    }
+
+    const comment = await prisma.comment.create({
+      data: {
+        desc: desc.trim(),
+        postSlug: postSlug.trim(),
+        userEmail: user.email,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+      },
+    });
+
+    // Trigger Notification for Post Author if commenter is not post author
+    if (post.userEmail && post.userEmail.toLowerCase() !== user.email.toLowerCase()) {
       await prisma.notification.create({
         data: {
           recipientEmail: post.userEmail.toLowerCase(),
@@ -56,7 +83,7 @@ const createComment = async (req, res) => {
           senderImage: user.image || null,
           type: 'COMMENT',
           message: `@${user.name?.replace(/\s+/g, '_').toLowerCase() || user.email.split('@')[0]} commented on your post "${post.title}"`,
-          link: `/posts/${postSlug}`,
+          link: `/posts/${postSlug.trim()}`,
         },
       });
     }

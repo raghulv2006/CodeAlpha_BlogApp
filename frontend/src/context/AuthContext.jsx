@@ -36,8 +36,11 @@ export const AuthProviderWrapper = ({ children }) => {
       if (currentUser) {
         const formattedUser = {
           uid: currentUser.uid,
-          name: currentUser.displayName || currentUser.email?.split("@")[0] || currentUser.phoneNumber || "User",
-          email: currentUser.email || `${currentUser.phoneNumber || currentUser.uid}@phone.user`,
+          name:
+            currentUser.displayName ||
+            (currentUser.email ? currentUser.email.split("@")[0] : `User_${currentUser.uid.slice(0, 5)}`),
+          // SECURITY FIX (M-03): Anonymize phone auth placeholder email to avoid leaking phone numbers
+          email: currentUser.email || `user_${currentUser.uid.toLowerCase()}@phone.user`,
           image: currentUser.photoURL || null,
           phoneNumber: currentUser.phoneNumber || null,
         };

@@ -192,7 +192,11 @@ export default function AppShell({ children }) {
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {suggestedData.users.map((u) => (
                   <div key={u.id || u.email} className={styles.userSuggestRow}>
-                    <div className={styles.userSuggestLeft}>
+                    <Link
+                      href={u.email ? `/profile?email=${encodeURIComponent(u.email)}` : `/profile?id=${encodeURIComponent(u.id)}`}
+                      className={styles.userSuggestLeft}
+                      style={{ textDecoration: "none" }}
+                    >
                       {u.image ? (
                         <img src={u.image} alt={u.name || "User"} className={styles.userSuggestAvatar} />
                       ) : (
@@ -202,9 +206,9 @@ export default function AppShell({ children }) {
                         <span className={styles.userSuggestName}>{u.name || u.email}</span>
                         <span className={styles.userSuggestHandle}>@{u.name?.replace(/\s+/g, "_").toLowerCase() || u.email?.split("@")[0]}</span>
                       </div>
-                    </div>
+                    </Link>
                     <Link
-                      href={`/profile?email=${encodeURIComponent(u.email)}`}
+                      href={u.email ? `/profile?email=${encodeURIComponent(u.email)}` : `/profile?id=${encodeURIComponent(u.id)}`}
                       style={{ fontSize: "0.75rem", color: "var(--accent-green)", background: "var(--softBg)", border: "1px solid var(--border-color)", padding: "4px 10px", borderRadius: 12, textDecoration: "none", fontWeight: 600 }}
                     >
                       View

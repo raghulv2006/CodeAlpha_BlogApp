@@ -39,7 +39,10 @@ const authMiddleware = async (req, res, next) => {
     return res.status(401).json({ message: 'Unauthorized: Missing or invalid Authorization header' });
   }
 
-  const idToken = authHeader.split('Bearer ')[1];
+  const idToken = authHeader.split('Bearer ')[1]?.trim();
+  if (!idToken || idToken.length > 4096) {
+    return res.status(401).json({ message: 'Unauthorized: Invalid token format' });
+  }
 
   try {
     let decodedToken;
@@ -50,9 +53,11 @@ const authMiddleware = async (req, res, next) => {
       if (process.env.NODE_ENV === 'production') {
         return res.status(500).json({ message: 'Internal Server Error: Firebase Admin not initialized' });
       }
-      // Dev fallback: blindly decode token without cryptographic verification
+      // Dev fallback: decode token payload only in development environment
       try {
-        const payload = Buffer.from(idToken.split('.')[1], 'base64').toString('utf-8');
+        const parts = idToken.split('.');
+        if (parts.length < 2) throw new Error('Invalid JWT structure');
+        const payload = Buffer.from(parts[1], 'base64').toString('utf-8');
         decodedToken = JSON.parse(payload);
       } catch (e) {
         return res.status(401).json({ message: 'Unauthorized: Invalid token format' });
@@ -61,8 +66,8 @@ const authMiddleware = async (req, res, next) => {
 
     const email = decodedToken.email;
 
-    if (!email) {
-      return res.status(401).json({ message: 'Unauthorized: Token must contain an email address' });
+    if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(401).json({ message: 'Unauthorized: Token must contain a valid email address' });
     }
 
     // Ensure the user exists in our DB

@@ -162,15 +162,15 @@
   color: var(--softTextColor);
 }
 
-/* Main Layout Area (Wrapper aligning center feed and right sidebar with zero dead space) */
 .mainLayoutWrapper {
   margin-left: 240px;
   display: flex;
   flex: 1;
   width: calc(100% - 240px);
-  max-width: 1240px;
+  min-width: 0;
+  max-width: 1440px;
   gap: 28px;
-  padding: 24px 24px 80px 24px;
+  padding: 20px 28px 80px 28px;
   box-sizing: border-box;
 }
 

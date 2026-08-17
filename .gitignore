@@ -1,8 +1,22 @@
-# ==========================================
-# 1. Dependencies & Package Managers
-# ==========================================
+# ==============================================================================
+# BotBlogs — Production-Grade .gitignore
+# Modern Full-Stack (Next.js 14, Node.js Express, Prisma, PostgreSQL, Docker)
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. DEPENDENCIES & PACKAGE MANAGERS
+# ------------------------------------------------------------------------------
 node_modules/
 **/node_modules/
+.pnpm-store/
+.npm/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Yarn 2+ (Berry) PnP & Zero-Installs
 .pnp
 .pnp.js
 .pnp.*
@@ -12,129 +26,243 @@ node_modules/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
-.pnpm-store/
-.npm/
+!.yarn/cache
 
-# ==========================================
-# 2. Next.js & Frontend Build Outputs
-# ==========================================
-frontend/.next/
-.next/
-**/.next/
-out/
-**/out/
-build/
-**/build/
-dist/
-**/dist/
-.turbo/
-**/.turbo/
-*.tsbuildinfo
-next-env.d.ts
-
-# ==========================================
-# 3. Environment Variables & Secrets
-# ==========================================
-# Ignore all .env files and local configuration overrides
+# ------------------------------------------------------------------------------
+# 2. ENVIRONMENT VARIABLES, SECRETS & CLOUD CREDENTIALS (CRITICAL SECURITY)
+# ------------------------------------------------------------------------------
+# Ignore all .env files and environment variants
 .env
 .env*
 .env.local
+.env.development
 .env.development.local
+.env.test
 .env.test.local
+.env.production
 .env.production.local
+.env.staging
+.env.staging.local
+*.env
+*.env.*
 **/.env
-**/.env*
+**/.env.*
 **/.env.local
 **/.env.development.local
 **/.env.test.local
 **/.env.production.local
+.env.vault
 
-# Safely un-ignore example/template env files
+# Safely un-ignore environment template/example files
 !.env.example
 !**/.env.example
 !*.env.example
 !**/*.env.example
+!.env.template
+!**/.env.template
 
-# Certificates & Private Keys
+# Firebase Service Account & Cloud Credentials
+*firebase*.json
+*service-account*.json
+*serviceAccountKey*.json
+*google-credentials*.json
+service-account.json
+firebase-service-account.json
+firebase-admin.json
+credentials.json
+client_secret*.json
+
+# SSL Certificates, Private Keys & GPG Keys
 *.pem
 *.key
 *.crt
+*.cer
+*.der
 *.pfx
 *.p12
+*.csr
+*.kdb
+*.jks
+id_rsa*
+id_ed25519*
+*.gpg
+*.asc
 
-# ==========================================
-# 4. Database & Prisma Local Artifacts
-# ==========================================
+# Cloudinary / AWS / GCP Secret Caches
+.aws/
+.gcp/
+.azure/
+
+# ------------------------------------------------------------------------------
+# 3. BUILD, BUNDLER & FRAMEWORK ARTIFACTS
+# ------------------------------------------------------------------------------
+# Next.js build output & cache
+.next/
+**/.next/
+frontend/.next/
+out/
+**/out/
+dist/
+**/dist/
+build/
+**/build/
+.swc/
+**/.swc/
+
+# Turborepo & Cache
+.turbo/
+**/.turbo/
+
+# TypeScript & Type Generation
+*.tsbuildinfo
+next-env.d.ts
+
+# ------------------------------------------------------------------------------
+# 4. DATABASE & PRISMA RUNTIME ARTIFACTS
+# ------------------------------------------------------------------------------
+# Local SQLite & Embedded DB files
 *.db
+*.db-journal
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
 *.sqlite-journal
-*.db-journal
+*.sqlite-wal
+*.sqlite-shm
 backend/prisma/*.db
 backend/prisma/*.sqlite
 
-# ==========================================
-# 5. Logs & Debugging
-# ==========================================
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-*.paniclog
+# Database dumps, backups & query logs
+*.dump
+*.sql.gz
+*.sql.bak
+*.pgdump
+*.rdb
 
-# ==========================================
-# 6. Uploads & Temporary Media / Storage
-# ==========================================
+# Prisma Schema Engine Binaries Cache
+*.prisma.cache
+prisma/*.db
+prisma/*.sqlite
+
+# ------------------------------------------------------------------------------
+# 5. USER UPLOADS & RUNTIME MEDIA STORAGE
+# ------------------------------------------------------------------------------
+# Ignore uploaded media files in local fallback directory, preserve .gitkeep
 uploads/
-**/uploads/
+**/uploads/*
+!**/uploads/.gitkeep
+!backend/public/uploads/.gitkeep
+backend/public/uploads/*
+!backend/public/uploads/.gitkeep
+
+# Temporary file storage
 temp/
 **/temp/
 tmp/
 **/tmp/
 *.tmp
+*.temp
 
-# ==========================================
-# 7. Testing & Code Coverage
-# ==========================================
+# ------------------------------------------------------------------------------
+# 6. LOGS, DIAGNOSTICS & SYSTEM PIDS
+# ------------------------------------------------------------------------------
+logs/
+**/logs/
+*.log
+*.paniclog
+*.pid
+*.seed
+*.pid.lock
+*.log.*
+combined.log
+error.log
+
+# ------------------------------------------------------------------------------
+# 7. TESTING, COVERAGE & PROFILING REPORTS
+# ------------------------------------------------------------------------------
 coverage/
 **/coverage/
-.nyc_output
+.nyc_output/
 .playwright/
+playwright-report/
+test-results/
+blob-report/
+.lighthouseci/
+.clinic/
+*.lcov
 
-# ==========================================
-# 8. Editor & IDE Settings
-# ==========================================
-.vscode/
+# ------------------------------------------------------------------------------
+# 8. IDE, EDITOR & OS METADATA
+# ------------------------------------------------------------------------------
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# JetBrains (WebStorm, IntelliJ IDEA, etc.)
 .idea/
+*.iws
+*.iml
+*.ipr
+
+# Visual Studio
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
+
+# Vim / Emacs / Sublime / Zed / Fleet
 *.sw?
 *.swo
 *.swp
+.*.swp
+*~
+*.bak
 .zed/
 .fleet/
+*.sublime-project
+*.sublime-workspace
 
-# ==========================================
-# 9. Operating System Generated Files
-# ==========================================
+# macOS
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
-Thumbs.db
-Desktop.ini
+Icon?
 
-# ==========================================
-# 10. Deployment & Hosting (Vercel, Netlify, etc.)
-# ==========================================
+# Windows
+ehthumbs.db
+ehthumbs_vista.db
+Thumbs.db
+Thumbs.db:encryptable
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+
+# ------------------------------------------------------------------------------
+# 9. DEPLOYMENT, SERVERLESS & CONTAINER CACHES
+# ------------------------------------------------------------------------------
 .vercel
 **/.vercel
 .netlify
+**/.netlify
+.serverless/
+.terraform/
+*.tfstate*
+*.tfvars
+!*.tfvars.example
 
+# Docker local overrides (preserve core docker-compose.yml)
+docker-compose.override.yml
+docker-compose.local.yml
+
+# AI / IDE Agent scratch workspaces
+.system_generated/
+**/.system_generated/

@@ -1,4 +1,5 @@
 const prisma = require('../utils/prisma');
+const { appCache } = require('../utils/cache');
 
 // Toggle Bookmark for a Post
 const toggleBookmark = async (req, res) => {
@@ -82,6 +83,11 @@ const getUserBookmarks = async (req, res) => {
 
 // Fetch Trending Hashtags
 const getTrendingHashtags = async (req, res) => {
+  const cacheKey = 'tags:trending';
+  const cached = appCache.get(cacheKey);
+  if (cached) {
+    return res.status(200).json({ tags: cached });
+  }
 
   try {
     const tags = await prisma.tag.findMany({
@@ -98,6 +104,7 @@ const getTrendingHashtags = async (req, res) => {
       take: 8,
     });
 
+    appCache.set(cacheKey, tags, 60000); // 60s TTL
     return res.status(200).json({ tags });
   } catch (error) {
     console.error('Error fetching trending tags:', error);
@@ -108,6 +115,11 @@ const getTrendingHashtags = async (req, res) => {
 // Fetch Suggested Accounts
 const getSuggestedUsers = async (req, res) => {
   const { userEmail } = req.query;
+  const cacheKey = `users:suggested:${userEmail ? userEmail.toLowerCase() : 'all'}`;
+  const cached = appCache.get(cacheKey);
+  if (cached) {
+    return res.status(200).json({ users: cached });
+  }
 
   try {
     let users = await prisma.user.findMany({
@@ -117,6 +129,7 @@ const getSuggestedUsers = async (req, res) => {
       select: {
         id: true,
         name: true,
+        email: true,
         image: true,
         bio: true,
         _count: {
@@ -126,6 +139,7 @@ const getSuggestedUsers = async (req, res) => {
       take: 5,
     });
 
+    appCache.set(cacheKey, users, 60000); // 60s TTL
     return res.status(200).json({ users });
   } catch (error) {
     console.error('Error fetching suggested users:', error);

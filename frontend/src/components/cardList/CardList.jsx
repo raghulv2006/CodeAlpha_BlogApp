@@ -36,7 +36,8 @@ const CardList = ({ page = 1, cat = "", tag = "", initialData = null }) => {
 
   // Initial load up to page N if direct URL has ?page=N
   React.useEffect(() => {
-    if (page > 1 && (!accumulatedPosts || accumulatedPosts.length < page * 10)) {
+    if (page > 1) {
+      let isMounted = true;
       setFetchingMore(true);
       const fetchPages = async () => {
         try {
@@ -49,6 +50,7 @@ const CardList = ({ page = 1, cat = "", tag = "", initialData = null }) => {
             );
           }
           const results = await Promise.all(pagePromises);
+          if (!isMounted) return;
           let allPosts = [];
           results.forEach((resData) => {
             if (resData?.posts) allPosts.push(...resData.posts);
@@ -61,10 +63,13 @@ const CardList = ({ page = 1, cat = "", tag = "", initialData = null }) => {
         } catch (e) {
           console.error("Error prefetching pages:", e);
         } finally {
-          setFetchingMore(false);
+          if (isMounted) setFetchingMore(false);
         }
       };
       fetchPages();
+      return () => {
+        isMounted = false;
+      };
     }
   }, [page, cat, tag, activeSort]);
 

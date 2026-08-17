@@ -30,10 +30,15 @@ const markNotificationsRead = async (req, res) => {
   const { notificationId } = req.body;
   const user = req.user;
 
+  // SECURITY FIX (H-03): Validate notificationId format if supplied
+  if (notificationId !== undefined && (typeof notificationId !== 'string' || !notificationId.trim() || notificationId.trim().length > 100)) {
+    return res.status(400).json({ message: 'Invalid notificationId' });
+  }
+
   try {
-    if (notificationId) {
+    if (notificationId && notificationId.trim()) {
       await prisma.notification.updateMany({
-        where: { id: notificationId, recipientEmail: user.email.toLowerCase() },
+        where: { id: notificationId.trim(), recipientEmail: user.email.toLowerCase() },
         data: { read: true },
       });
     } else {

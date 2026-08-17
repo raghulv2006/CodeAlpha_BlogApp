@@ -1,4 +1,5 @@
 const prisma = require('../utils/prisma');
+const { appCache } = require('../utils/cache');
 
 const DEFAULT_CATEGORIES = [
   { slug: 'style', title: 'Style' },
@@ -13,13 +14,16 @@ const DEFAULT_CATEGORIES = [
   { slug: 'news', title: 'News' },
 ];
 
-let categoriesCache = null;
-let cacheTime = 0;
+const CATEGORIES_CACHE_KEY = 'categories:all';
+
+const invalidateCategoriesCache = () => {
+  appCache.del(CATEGORIES_CACHE_KEY);
+};
 
 const getCategories = async (req, res) => {
-  const now = Date.now();
-  if (categoriesCache && now - cacheTime < 60000) {
-    return res.status(200).json(categoriesCache);
+  const cached = appCache.get(CATEGORIES_CACHE_KEY);
+  if (cached) {
+    return res.status(200).json(cached);
   }
 
   try {
@@ -35,8 +39,7 @@ const getCategories = async (req, res) => {
       categories = await prisma.category.findMany({ orderBy: { title: 'asc' } });
     }
 
-    categoriesCache = categories;
-    cacheTime = Date.now();
+    appCache.set(CATEGORIES_CACHE_KEY, categories, 60000);
     return res.status(200).json(categories);
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -76,6 +79,9 @@ const createCategory = async (req, res) => {
       },
     });
 
+    // Invalidate categories cache so fresh list is immediately returned to all clients
+    invalidateCategoriesCache();
+
     return res.status(200).json(category);
   } catch (error) {
     console.error('Error creating category:', error);
@@ -83,5 +89,5 @@ const createCategory = async (req, res) => {
   }
 };
 
-module.exports = { getCategories, createCategory };
+module.exports = { getCategories, createCategory, invalidateCategoriesCache };
 

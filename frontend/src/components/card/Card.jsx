@@ -218,13 +218,15 @@ const Card = ({ item, showDelete = false }) => {
                   <span>💬 {item?.comments?.length || 0}</span>
                 </div>
               </Link>
-              <button
+              <motion.button
                 type="button"
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.92 }}
                 onClick={handleToggleBookmark}
                 className={`${styles.bookmarkBtn} ${isBookmarked ? styles.bookmarkedActive : ""}`}
               >
                 {isBookmarked ? "🔖 Bookmarked" : "🏷️ Bookmark"}
-              </button>
+              </motion.button>
             </div>
           </motion.div>
         ) : item?.img && !imgError ? (
@@ -244,13 +246,15 @@ const Card = ({ item, showDelete = false }) => {
                   <span>💬 {item?.comments?.length || 0}</span>
                 </div>
               </Link>
-              <button
+              <motion.button
                 type="button"
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.92 }}
                 onClick={handleToggleBookmark}
                 className={`${styles.bookmarkBtn} ${isBookmarked ? styles.bookmarkedActive : ""}`}
               >
                 {isBookmarked ? "🔖 Bookmarked" : "🏷️ Bookmark"}
-              </button>
+              </motion.button>
             </div>
           </motion.div>
         ) : null}
@@ -275,12 +279,14 @@ const Card = ({ item, showDelete = false }) => {
                 key={t.id || t.name}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: idx * 0.03 }}
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ delay: idx * 0.02 }}
               >
                 <Link
                   href={`/blog?tag=${t.name}`}
                   className="glass-lite"
-                  style={{ textDecoration: "none", fontSize: "0.75rem", color: "#38bdf8", padding: "3px 10px", borderRadius: 12, display: "inline-block" }}
+                  style={{ textDecoration: "none", fontSize: "0.75rem", color: "#38bdf8", padding: "3px 10px", borderRadius: 12, display: "inline-block", transition: "all 0.15s ease" }}
                 >
                   #{t.name}
                 </Link>
@@ -306,9 +312,11 @@ const Card = ({ item, showDelete = false }) => {
             <span>{item?.views || 0} views</span>
           </div>
 
-          <Link href={`/posts/${item?.slug}`} className={styles.readMoreBtn}>
-            Read Article →
-          </Link>
+          <motion.div whileHover={{ scale: 1.05, x: 2 }} whileTap={{ scale: 0.95 }} style={{ marginLeft: "auto" }}>
+            <Link href={`/posts/${item?.slug}`} className={styles.readMoreBtn}>
+              Read Article →
+            </Link>
+          </motion.div>
         </div>
       </div>
     </motion.div>

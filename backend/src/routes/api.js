@@ -29,7 +29,11 @@ const {
 } = require('../controllers/notifications');
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
+// SECURITY FIX (L-01): Enforce 55MB hard cap at multer level to prevent memory exhaustion
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 55 * 1024 * 1024 },
+});
 const { authMiddleware } = require('../middleware/auth');
 
 // Categories
